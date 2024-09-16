@@ -4,15 +4,15 @@
 
 namespace ConsoleRenderer
 {
-    class ConsoleWindow
-    {
-    public:
-        ConsoleWindow(int width, int height);
-        ~ConsoleWindow();
+	class ConsoleWindow
+	{
+	public:
+		ConsoleWindow(int width, int height);
+		~ConsoleWindow();
 
-        friend std::ostream& operator<< (std::ostream& stream, const ConsoleWindow& consoleWindow);
+		friend std::ostream& operator<< (std::ostream& stream, const ConsoleWindow& consoleWindow);
 
-    private:
-        int m_Width, m_Height;
-    };
+	private:
+		int m_Width, m_Height;
+	};
 }
