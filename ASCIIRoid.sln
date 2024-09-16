@@ -4,6 +4,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ASCIIRoid", "ASCIIRoid.vcxp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsoleRenderer", "ConsoleRenderer\ConsoleRenderer.vcxproj", "{03EFB253-0FC4-496E-BACA-ADB7E2477A47}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathRoid", "MathRoid\MathRoid.vcxproj", "{DE632CF7-8F0B-4230-92E7-DD717527BE21}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -28,5 +30,13 @@ Global
 		{03EFB253-0FC4-496E-BACA-ADB7E2477A47}.Release|Win32.Build.0 = Release|Win32
 		{03EFB253-0FC4-496E-BACA-ADB7E2477A47}.Release|x64.ActiveCfg = Release|x64
 		{03EFB253-0FC4-496E-BACA-ADB7E2477A47}.Release|x64.Build.0 = Release|x64
+		{DE632CF7-8F0B-4230-92E7-DD717527BE21}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DE632CF7-8F0B-4230-92E7-DD717527BE21}.Debug|Win32.Build.0 = Debug|Win32
+		{DE632CF7-8F0B-4230-92E7-DD717527BE21}.Debug|x64.ActiveCfg = Debug|x64
+		{DE632CF7-8F0B-4230-92E7-DD717527BE21}.Debug|x64.Build.0 = Debug|x64
+		{DE632CF7-8F0B-4230-92E7-DD717527BE21}.Release|Win32.ActiveCfg = Release|Win32
+		{DE632CF7-8F0B-4230-92E7-DD717527BE21}.Release|Win32.Build.0 = Release|Win32
+		{DE632CF7-8F0B-4230-92E7-DD717527BE21}.Release|x64.ActiveCfg = Release|x64
+		{DE632CF7-8F0B-4230-92E7-DD717527BE21}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 EndGlobal

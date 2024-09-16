@@ -159,6 +159,12 @@
   <ItemGroup>
     <ClInclude Include="ConsoleRenderer.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MathRoid\MathRoid.vcxproj">
+      <Project>{de632cf7-8f0b-4230-92e7-dd717527be21}</Project>
+      <Name>MathRoid</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
