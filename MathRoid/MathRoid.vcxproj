@@ -155,12 +155,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="MathRoid.cpp" />
-    <ClCompile Include="Vector2.cpp" />
+    <ClCompile Include="**/*.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MathRoid.hpp" />
-    <ClInclude Include="Vector2.hpp" />
+    <ClInclude Include="**/*.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

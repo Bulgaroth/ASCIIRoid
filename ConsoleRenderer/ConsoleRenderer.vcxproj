@@ -155,10 +155,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ConsoleRenderer.cpp" />
+    <ClCompile Include="**/*.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConsoleRenderer.hpp" />
+    <ClInclude Include="**/*.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MathRoid\MathRoid.vcxproj">
