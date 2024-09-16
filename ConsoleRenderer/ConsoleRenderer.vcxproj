@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{03EFB253-0FC4-496E-BACA-ADB7E2477A47}</ProjectGuid>
+    <ProjectGuid>{0CA2F214-2934-4DDD-B6EB-6E672BB06010}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ConsoleRenderer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
@@ -78,6 +78,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -161,7 +162,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MathRoid\MathRoid.vcxproj">
-      <Project>{de632cf7-8f0b-4230-92e7-dd717527be21}</Project>
+      <Project>{9dae358f-63b0-4483-96c4-e3b151bd1be0}</Project>
       <Name>MathRoid</Name>
     </ProjectReference>
   </ItemGroup>
