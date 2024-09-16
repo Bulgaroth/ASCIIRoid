@@ -9,5 +9,7 @@ int main(int argc, char* argv[])
 	ConsoleRenderer::ConsoleWindow window(1920, 1080);
 
 	std::cout << window << "\n";
+
+	std::cin.get();
 	return 0;
 }

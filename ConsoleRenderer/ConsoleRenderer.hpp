@@ -13,6 +13,6 @@ namespace ConsoleRenderer
 		friend std::ostream& operator<< (std::ostream& stream, const ConsoleWindow& consoleWindow);
 
 	private:
-		int m_Width, m_Height;
+		int m_width, m_height;
 	};
 }
