@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "ConsoleRenderer/ConsoleRenderer.hpp"
-#include "MathRoid/Vector2.hpp"
+#include "Math/Vector2.hpp"
 
 int main(int argc, char* argv[])
 {
