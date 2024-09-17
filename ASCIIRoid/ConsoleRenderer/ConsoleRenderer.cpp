@@ -5,6 +5,7 @@
 #define _WIN32_WINNT 0x0501
 #include <iostream>
 #include <windows.h>
+#include <chrono>
 
 
 namespace ConsoleRenderer
@@ -27,9 +28,29 @@ namespace ConsoleRenderer
 		SetConsoleActiveScreenBuffer(m_handle);
 
 		m_FOV = 3.14159265f / 4.0f; // in radiant
+
+		m_lastTime = std::chrono::system_clock::now();
 	}
 
 	ConsoleWindow::~ConsoleWindow() = default;
+
+	void ConsoleWindow::Draw(int x, int y, const std::wstring& str) const
+	{
+		for (int i = 0; i < str.size(); i++)
+		{
+			if (x >= 0 && x < m_screenWidth && y >= 0 && y < m_screenHeight)
+			{
+				m_screenBuffer[y * m_screenWidth + x + i] = str[i];
+			}
+		}
+		
+	}
+
+	void ConsoleWindow::Render()
+	{
+		m_screenBuffer[m_screenWidth * m_screenHeight - 1] = '\0';
+		WriteConsoleOutputCharacter(m_handle, m_screenBuffer, m_screenWidth * m_screenHeight, { 0,0 }, &m_dwBytesWritten);
+	}
 
 	void ConsoleWindow::ClearScreen(char fill) const
 	{
@@ -55,6 +76,40 @@ namespace ConsoleRenderer
 
 	void ConsoleWindow::Update()
 	{
+		auto now = std::chrono::system_clock::now();
+		std::chrono::duration<float> duration = now - m_lastTime;
+		m_lastTime = now;
+		float deltaTime = duration.count();
+		auto size = GetSize();
+
+		if (size.x != m_screenWidth || size.y != m_screenHeight)
+		{
+			delete[] m_screenBuffer;
+			m_screenBuffer = new wchar_t[size.x * size.y];
+			m_screenWidth = size.x;
+			m_screenHeight = size.y;
+			ClearScreen();
+		}
+
+
+		if (GetAsyncKeyState((unsigned short)'Q') & 0x8000)
+			m_playerAngle -= 0.5f * deltaTime;
+
+		if (GetAsyncKeyState((unsigned short)'D') & 0x8000)
+			m_playerAngle += 0.5f * deltaTime;
+
+		if (GetAsyncKeyState((unsigned short)'Z') & 0x8000)
+		{
+			m_playerPos.x += sinf(m_playerAngle) * 1.0f * deltaTime;
+			m_playerPos.y += cosf(m_playerAngle) * 1.0f * deltaTime;
+		}
+
+		if (GetAsyncKeyState((unsigned short)'S') & 0x8000)
+		{
+			m_playerPos.x -= sinf(m_playerAngle) * 1.0f * deltaTime;
+			m_playerPos.y -= cosf(m_playerAngle) * 1.0f * deltaTime;
+		}
+		
 		for (int x = 0; x < m_screenWidth; ++x)
 		{
 			float fRayAngle = (m_playerAngle - m_FOV / 2.0f) + (static_cast<float>(x) / static_cast<float>(m_screenWidth)) * m_FOV;
@@ -86,6 +141,14 @@ namespace ConsoleRenderer
 				int ceiling = (float)(m_screenHeight/2.0) - m_screenHeight / ((float)distanceToObject);
 				int floor = m_screenHeight - ceiling;
 
+				short shade;
+
+				if (distanceToObject <= m_depth / 4.0f)		shade = 0x2588;
+				else if (distanceToObject < m_depth / 3.0f)	shade = 0x2593;
+				else if (distanceToObject < m_depth / 2.0f)	shade = 0x2592;
+				else if (distanceToObject < m_depth)		shade = 0x2591;
+				else										shade = ' ';
+
 				for (int y = 0; y < m_screenHeight; y++)
 				{
 					if (y < ceiling)
@@ -93,22 +156,34 @@ namespace ConsoleRenderer
 					else if (y > ceiling && y < floor)
 					{
 						__noop;
-						m_screenBuffer[y * m_screenWidth + x] = '#';
+						m_screenBuffer[y * m_screenWidth + x] = shade;
 					}
 					else
-						m_screenBuffer[y * m_screenWidth + x] = ' ';
+					{
+						short otherShade;
+						float b = 1.0f - (((float)y - m_screenHeight / 2.0f) / ((float)m_screenHeight / 2.0f));
+						if (b < 0.25f)		otherShade = '#';
+						else if (b < 0.5f)	otherShade = 'x';
+						else if (b < 0.75f)	otherShade = '.';
+						else if (b < 0.9f)	otherShade = '-';
+						else				otherShade = ' ';
+						m_screenBuffer[y * m_screenWidth + x] = otherShade;
+					}
 				}
 			}
 		}
 		
-		m_screenBuffer[m_screenWidth * m_screenHeight - 1] = '\0';
-		WriteConsoleOutputCharacter(m_handle, m_screenBuffer, m_screenWidth * m_screenHeight, { 0,0 }, &m_dwBytesWritten);
 	}
 
 	std::ostream& operator<<(std::ostream& stream, const ConsoleWindow& consoleWindow)
 	{
 		auto size = consoleWindow.GetSize();
 		return stream << "Width: " + std::to_string(size.x) + ", Height: " + std::to_string(size.y);
+	}
+	std::wostream& operator<<(std::wostream& stream, const ConsoleWindow& consoleWindow)
+	{
+		auto size = consoleWindow.GetSize();
+		return stream << L"Width: " + std::to_wstring(size.x) + L", Height: " + std::to_wstring(size.y);
 	}
 
 }

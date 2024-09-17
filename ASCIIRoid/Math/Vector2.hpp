@@ -20,4 +20,5 @@ namespace Math
 	};
 
 	using Vector2i = Vector2<int>;
+	using Vector2f = Vector2<float>;
 }
