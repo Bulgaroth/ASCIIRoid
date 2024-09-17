@@ -160,12 +160,6 @@
   <ItemGroup>
     <ClInclude Include="**/*.hpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\MathRoid\MathRoid.vcxproj">
-      <Project>{9dae358f-63b0-4483-96c4-e3b151bd1be0}</Project>
-      <Name>MathRoid</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
