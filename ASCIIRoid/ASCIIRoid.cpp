@@ -1,15 +1,18 @@
 #include <iostream>
 
 #include "ConsoleRenderer/ConsoleRenderer.hpp"
+#include "MathRoid/Vector2.hpp"
 
 int main(int argc, char* argv[])
 {
-	std::cout << "Hello World!\n";
+	Math::Vector2i foo(1920, 1080);
+	std::cout << "Please set the console to fullscreen\n";
 
-	ConsoleRenderer::ConsoleWindow window(1920, 1080);
+	ConsoleRenderer::ConsoleWindow window(foo.x, foo.y);
+
 	
-	std::cout << window << "\n";
 
+	
 	std::cin.get();
 	return 0;
 }

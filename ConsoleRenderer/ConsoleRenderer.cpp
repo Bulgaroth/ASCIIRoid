@@ -28,13 +28,20 @@ namespace ConsoleRenderer
 	ConsoleWindow::ConsoleWindow(int width, int height)
 		: m_width(width), m_height(height)
 	{
-		::SendMessage(::GetConsoleWindow(), WM_SYSKEYDOWN, VK_RETURN, 0x20000000);
+		SetConsoleDisplayMode(GetConsoleWindow(), CONSOLE_FULLSCREEN_MODE, nullptr);
+		// ::SendMessage(::GetConsoleWindow(), WM_SYSKEYDOWN, VK_RETURN, 0x20000000);
 		//
 		// LONG_PTR new_style =  WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL;
 		// setConsoleWindowStyle(GWL_STYLE, new_style);
 	}
 
 	ConsoleWindow::~ConsoleWindow() = default;
+
+	bool ConsoleWindow::IsFullScreen() const
+	{
+		// return GetConsoleDisplayMode(CONSOLE_FULLSCREEN);
+		return false;
+	}
 
 	std::ostream& operator<<(std::ostream& stream, const ConsoleWindow& consoleWindow)
 	{
