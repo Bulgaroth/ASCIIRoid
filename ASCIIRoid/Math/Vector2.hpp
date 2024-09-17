@@ -17,7 +17,6 @@ namespace Math
 		{
 			return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 		}
-		
 	};
 
 	using Vector2i = Vector2<int>;

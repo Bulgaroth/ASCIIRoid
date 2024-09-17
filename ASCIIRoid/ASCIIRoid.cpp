@@ -5,14 +5,22 @@
 
 int main(int argc, char* argv[])
 {
-	Math::Vector2i foo(1920, 1080);
-	std::cout << "Please set the console to fullscreen\n";
+	Math::Vector2i size(156, 46);
+	ConsoleRenderer::ConsoleWindow window(size.x, size.y);
+	
+	// std::cout << "Please set the console to fullscreen...\n";
+	// std::cin.get();
+	//
+	// window.ClearScreen();
+	//
+	// std::cout << "Window size is " << window << '\n';
+	// std::cin.get();
 
-	ConsoleRenderer::ConsoleWindow window(foo.x, foo.y);
+	while (true)
+	{
+		window.Update();
+	}
 
 	
-
-	
-	std::cin.get();
 	return 0;
 }
