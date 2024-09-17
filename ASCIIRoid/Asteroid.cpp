@@ -3,7 +3,7 @@
 
 //enum Type { Base, PowerUp, Explosive, Spreader };
 
-Asteroid::Asteroid(int size, int color, Math::Vector2 pos) 
+Asteroid::Asteroid(int size, int color, Math::Vector2i pos) 
 	: m_size(size), m_color(color), m_pos(pos)
 {
 
@@ -19,7 +19,7 @@ void Asteroid::Hit()
 	switch (m_size)
 	{
 		case 1:
-			Destroy;
+			Destroy();
 			break;
 		case 2:
 		{

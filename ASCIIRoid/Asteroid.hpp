@@ -1,10 +1,12 @@
 #pragma once
+#include <memory>
+
 #include "../MathRoid/Vector2.hpp"
 
 class Asteroid
 {
 public:
-	Asteroid(int size, int color, Math::Vector2 pos);
+	Asteroid(int size, int color, Math::Vector2i pos);
 	~Asteroid() = default;
 
 	void Update();
@@ -13,5 +15,5 @@ public:
 
 private:
 	int m_size, m_color;
-	Math::Vector2 m_pos;
+	Math::Vector2i m_pos;
 };
