@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 
-#include "../MathRoid/Vector2.hpp"
+#include "Math/Vector2.hpp"
 
 class Asteroid
 {

@@ -2,10 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ASCIIRoid", "ASCIIRoid\ASCIIRoid.vcxproj", "{D6210577-DE82-492E-818E-4B5612DDFB55}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathRoid", "MathRoid\MathRoid.vcxproj", "{9DAE358F-63B0-4483-96C4-E3B151BD1BE0}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsoleRenderer", "ConsoleRenderer\ConsoleRenderer.vcxproj", "{0CA2F214-2934-4DDD-B6EB-6E672BB06010}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -22,21 +18,5 @@ Global
 		{D6210577-DE82-492E-818E-4B5612DDFB55}.Release|Win32.Build.0 = Release|Win32
 		{D6210577-DE82-492E-818E-4B5612DDFB55}.Release|x64.ActiveCfg = Release|x64
 		{D6210577-DE82-492E-818E-4B5612DDFB55}.Release|x64.Build.0 = Release|x64
-		{9DAE358F-63B0-4483-96C4-E3B151BD1BE0}.Debug|Win32.ActiveCfg = Debug|Win32
-		{9DAE358F-63B0-4483-96C4-E3B151BD1BE0}.Debug|Win32.Build.0 = Debug|Win32
-		{9DAE358F-63B0-4483-96C4-E3B151BD1BE0}.Debug|x64.ActiveCfg = Debug|x64
-		{9DAE358F-63B0-4483-96C4-E3B151BD1BE0}.Debug|x64.Build.0 = Debug|x64
-		{9DAE358F-63B0-4483-96C4-E3B151BD1BE0}.Release|Win32.ActiveCfg = Release|Win32
-		{9DAE358F-63B0-4483-96C4-E3B151BD1BE0}.Release|Win32.Build.0 = Release|Win32
-		{9DAE358F-63B0-4483-96C4-E3B151BD1BE0}.Release|x64.ActiveCfg = Release|x64
-		{9DAE358F-63B0-4483-96C4-E3B151BD1BE0}.Release|x64.Build.0 = Release|x64
-		{0CA2F214-2934-4DDD-B6EB-6E672BB06010}.Debug|Win32.ActiveCfg = Debug|Win32
-		{0CA2F214-2934-4DDD-B6EB-6E672BB06010}.Debug|Win32.Build.0 = Debug|Win32
-		{0CA2F214-2934-4DDD-B6EB-6E672BB06010}.Debug|x64.ActiveCfg = Debug|x64
-		{0CA2F214-2934-4DDD-B6EB-6E672BB06010}.Debug|x64.Build.0 = Debug|x64
-		{0CA2F214-2934-4DDD-B6EB-6E672BB06010}.Release|Win32.ActiveCfg = Release|Win32
-		{0CA2F214-2934-4DDD-B6EB-6E672BB06010}.Release|Win32.Build.0 = Release|Win32
-		{0CA2F214-2934-4DDD-B6EB-6E672BB06010}.Release|x64.ActiveCfg = Release|x64
-		{0CA2F214-2934-4DDD-B6EB-6E672BB06010}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 EndGlobal
