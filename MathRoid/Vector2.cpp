@@ -1,16 +1,16 @@
-#pragma once
-
 #include <cmath>
 #include "Vector2.hpp"
 
 namespace Math
 {
-	Vector2::Vector2(int x, int y) : x(x), y(y)
+	template<typename T>
+	Vector2<T>::Vector2(T x, T y) : x(x), y(y)
 	{
 	}
 
-	float Distance(Vector2 a, Vector2 b)
+	template<typename T>
+	float Vector2<T>::Distance(Vector2 a, Vector2 b)
 	{
-		return std::sqrt(((a.x - b.x) * (a.x - b.x)) + ((a.y - b.y) * (a.y - b.y)));
+		return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 	}
 }
