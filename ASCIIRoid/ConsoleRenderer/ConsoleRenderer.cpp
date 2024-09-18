@@ -7,6 +7,9 @@
 #include <windows.h>
 #include <chrono>
 
+#include "ASCIIRoid/Math/Utility.hpp"
+
+
 
 namespace ConsoleRenderer
 {
@@ -109,16 +112,22 @@ namespace ConsoleRenderer
 			m_playerPos.x -= sinf(m_playerAngle) * 1.0f * deltaTime;
 			m_playerPos.y -= cosf(m_playerAngle) * 1.0f * deltaTime;
 		}
+
+		const auto& spheres = m_worldMap.GetSpheres();
 		
 		for (int x = 0; x < m_screenWidth; ++x)
 		{
 			float fRayAngle = (m_playerAngle - m_FOV / 2.0f) + (static_cast<float>(x) / static_cast<float>(m_screenWidth)) * m_FOV;
 
 			float distanceToObject = 0.0f;
+			Math::Vector2f collision = Math::Vector2f(0.0f, 0.0f);
 			bool hitWall = false;
 
 			float eyeX = sinf(fRayAngle);
 			float eyeY = cosf(fRayAngle);
+
+			Math::Ray ray{m_playerPos, {eyeX, eyeY}};
+			
 			while (!hitWall && distanceToObject < m_depth)
 			{
 				distanceToObject += 0.1f;
@@ -138,37 +147,36 @@ namespace ConsoleRenderer
 					}
 				}
 
-				int ceiling = (float)(m_screenHeight/2.0) - m_screenHeight / ((float)distanceToObject);
-				int floor = m_screenHeight - ceiling;
+			}
+			int ceiling = (float)(m_screenHeight/2.0) - m_screenHeight / ((float)distanceToObject);
+			int floor = m_screenHeight - ceiling;
 
-				short shade;
+			std::wstring chars = L"@&%QWNM0gB$#DR8mHXKAUbGOpV4d9h6PkqwSE2]ayjxY5Zoen[ult13If}C{iF|(7J)vTLs?z/*cr!+<>;=^,_:'-.` ";
 
-				if (distanceToObject <= m_depth / 4.0f)		shade = 0x2588;
-				else if (distanceToObject < m_depth / 3.0f)	shade = 0x2593;
-				else if (distanceToObject < m_depth / 2.0f)	shade = 0x2592;
-				else if (distanceToObject < m_depth)		shade = 0x2591;
-				else										shade = ' ';
+			int idx = (distanceToObject / m_depth) * chars.size();
 
-				for (int y = 0; y < m_screenHeight; y++)
+			wchar_t shade = chars[idx];
+			for (int y = 0; y < m_screenHeight; y++)
+			{
+				if (y < ceiling)
+					m_screenBuffer[y * m_screenWidth + x] = ' ';
+				else if (y > ceiling && y < floor)
 				{
-					if (y < ceiling)
-						m_screenBuffer[y * m_screenWidth + x] = ' ';
-					else if (y > ceiling && y < floor)
-					{
-						__noop;
-						m_screenBuffer[y * m_screenWidth + x] = shade;
-					}
-					else
-					{
-						short otherShade;
-						float b = 1.0f - (((float)y - m_screenHeight / 2.0f) / ((float)m_screenHeight / 2.0f));
-						if (b < 0.25f)		otherShade = '#';
-						else if (b < 0.5f)	otherShade = 'x';
-						else if (b < 0.75f)	otherShade = '.';
-						else if (b < 0.9f)	otherShade = '-';
-						else				otherShade = ' ';
-						m_screenBuffer[y * m_screenWidth + x] = otherShade;
-					}
+					m_screenBuffer[y * m_screenWidth + x] = shade;
+				}
+				else
+				{
+					float b = 1.0f - (((float)y - m_screenHeight / 2.0f) / ((float)m_screenHeight / 2.0f));
+					int idx2 = b * chars.size();
+					short otherShade;
+					if (b > 1.0f) otherShade = ' ';
+					 else otherShade = chars[idx2];
+					// if (b < 0.25f)		otherShade = '#';
+					// else if (b < 0.5f)	otherShade = 'x';
+					// else if (b < 0.75f)	otherShade = '-';
+					// else if (b < 0.9f)	otherShade = '.';
+					// else				otherShade = ' ';
+					m_screenBuffer[y * m_screenWidth + x] = otherShade;
 				}
 			}
 		}
