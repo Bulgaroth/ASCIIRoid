@@ -40,6 +40,12 @@ namespace Math
 			return Vector2(x * other, y * other);
 		}
 
+		template<typename TT>
+		Vector2 operator-(TT other) const
+		{
+			return Vector2(x - other, y - other);
+		}
+
 		Vector2 Normalized() const
 		{
 			T len = std::sqrt(x * x + y * y);

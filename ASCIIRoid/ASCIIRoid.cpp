@@ -25,10 +25,11 @@ int main(int argc, char* argv[])
 		window.Update();
 	
 		std::wstringstream ss;
-		ss << "the window is " << window;
-		// window.Draw(0, 0, ss.str());
+		ss << "Player angle is " << window.m_playerAngle * 180 / 3.14159265358979323846 << " | ";
+		ss << "Player position is " << window.m_playerPos.x << ", 0, " << window.m_playerPos.y;
+		window.Draw(0, 0, ss.str());
 
-		window.Render();
+		window.PushBuffer();
 	}
 
 	

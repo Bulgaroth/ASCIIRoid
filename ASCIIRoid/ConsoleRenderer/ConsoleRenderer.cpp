@@ -8,7 +8,10 @@
 #include <chrono>
 
 #include "ASCIIRoid/Math/Utility.hpp"
+#include "ASCIIRoid/Math/Vector3.hpp"
 
+const std::wstring CHARS = L"@&%QWNM0gB$#DR8mHXKAUbGOpV4d9h6PkqwSE2]ayjxY5Zoen[ult13If}C{iF|(7J)vTLs?z/*cr!+<>;=^,_:'-.`";
+const Math::Vector3f LIGHT_DIR = Math::Vector3f(1, 1, 1);
 
 
 namespace ConsoleRenderer
@@ -35,7 +38,10 @@ namespace ConsoleRenderer
 		m_lastTime = std::chrono::system_clock::now();
 	}
 
-	ConsoleWindow::~ConsoleWindow() = default;
+	ConsoleWindow::~ConsoleWindow()
+	{
+		delete[] m_screenBuffer;
+	};
 
 	void ConsoleWindow::Draw(int x, int y, const std::wstring& str) const
 	{
@@ -50,6 +56,85 @@ namespace ConsoleRenderer
 	}
 
 	void ConsoleWindow::Render()
+	{
+		for (uint32_t y = 0; y < m_screenHeight; y++)
+		{
+			for (uint32_t x = 0; x < m_screenWidth; x++)
+			{
+				Math::Vector2f coord = {
+					static_cast<float>(x) / static_cast<float>(m_screenWidth) * (static_cast<float>(m_screenWidth) / static_cast<float>(m_screenHeight)),
+					static_cast<float>(y) / static_cast<float>(m_screenHeight)
+				};
+				coord = coord * 2.0f - 1.0f;
+				m_screenBuffer[x + y * m_screenWidth] = PerPixel(coord);
+			}
+		}
+	}
+
+	wchar_t ConsoleWindow::PerPixel(Math::Vector2f coord) const
+	{
+		wchar_t result = L' ';
+		Math::Vector3f closestPoint = {0.0f, 0.0f, 0.0f};
+		bool hit = false;
+		float closestDistance = 1000000.0f;
+		Math::Vector3f rayOrigin = Math::Vector3f(m_playerPos.x, 0, m_playerPos.y);
+
+		float cosT = cosf(m_playerAngle);
+		float sinT = sinf(m_playerAngle);
+
+		Math::Vector3f baseDirection(coord.x, coord.y, -1.0f);
+		Math::Vector3f rayDirection = Math::Vector3f(
+			baseDirection.x * cosT + baseDirection.z * sinT,
+			baseDirection.y,
+			-baseDirection.x * sinT + baseDirection.z * cosT
+		);
+		rayDirection = rayDirection.Normalized();
+
+		float a = rayDirection.Dot(rayDirection);
+
+		for (const auto& sphere : m_worldMap.GetSpheres())
+		{
+			float radius = sphere.radius;
+			auto spherePos = Math::Vector3f(sphere.center.x, 0, sphere.center.y);
+
+			auto origin = rayOrigin - spherePos;
+			float b = 2.0f * origin.Dot(rayDirection);
+			float c = origin.Dot(origin) - radius * radius;
+
+			float dis = b * b - 4 * a * c;
+
+			float t0, t1;
+			if (dis >= 0)
+			{
+				t0 = (-b - sqrt(dis)) / (2.0f * a);
+				t1 = (-b + sqrt(dis)) / (2.0f * a);
+
+				if (t0 > t1)
+					t0 = t1;
+
+				if (t0 >= 0 && t0 < closestDistance)
+				{
+					closestDistance = t0;
+					hit = true;
+					closestPoint = spherePos;
+				}
+			}
+		}
+
+		if (hit)
+		{
+			auto origin = rayOrigin - closestPoint;
+			auto hitPoint = origin + rayDirection * closestDistance;
+			auto normal = hitPoint.Normalized();
+
+			auto lightIntensity = max(min(normal.Dot(LIGHT_DIR), 1.0f), 0.0f);
+			auto idx = static_cast<int>(lightIntensity * (CHARS.size() - 1));
+			result = CHARS[idx];
+		}
+		return result;
+	}
+
+	void ConsoleWindow::PushBuffer()
 	{
 		m_screenBuffer[m_screenWidth * m_screenHeight - 1] = '\0';
 		WriteConsoleOutputCharacter(m_handle, m_screenBuffer, m_screenWidth * m_screenHeight, { 0,0 }, &m_dwBytesWritten);
@@ -96,90 +181,92 @@ namespace ConsoleRenderer
 
 
 		if (GetAsyncKeyState((unsigned short)'Q') & 0x8000)
-			m_playerAngle -= 0.5f * deltaTime;
+			m_playerAngle += 2.f * deltaTime;
 
 		if (GetAsyncKeyState((unsigned short)'D') & 0x8000)
-			m_playerAngle += 0.5f * deltaTime;
+			m_playerAngle -= 2.f * deltaTime;
 
 		if (GetAsyncKeyState((unsigned short)'Z') & 0x8000)
 		{
-			m_playerPos.x += sinf(m_playerAngle) * 1.0f * deltaTime;
-			m_playerPos.y += cosf(m_playerAngle) * 1.0f * deltaTime;
+			m_playerPos.x -= sinf(m_playerAngle) * 4.f * deltaTime;
+			m_playerPos.y -= cosf(m_playerAngle) * 4.f * deltaTime;
 		}
 
 		if (GetAsyncKeyState((unsigned short)'S') & 0x8000)
 		{
-			m_playerPos.x -= sinf(m_playerAngle) * 1.0f * deltaTime;
-			m_playerPos.y -= cosf(m_playerAngle) * 1.0f * deltaTime;
+			m_playerPos.x += sinf(m_playerAngle) * 4.f * deltaTime;
+			m_playerPos.y += cosf(m_playerAngle) * 4.f * deltaTime;
 		}
-
-		const auto& spheres = m_worldMap.GetSpheres();
-		
-		for (int x = 0; x < m_screenWidth; ++x)
-		{
-			float fRayAngle = (m_playerAngle - m_FOV / 2.0f) + (static_cast<float>(x) / static_cast<float>(m_screenWidth)) * m_FOV;
-
-			float distanceToObject = 0.0f;
-			Math::Vector2f collision = Math::Vector2f(0.0f, 0.0f);
-			bool hitWall = false;
-
-			float eyeX = sinf(fRayAngle);
-			float eyeY = cosf(fRayAngle);
-
-			Math::Ray ray{m_playerPos, {eyeX, eyeY}};
-			
-			while (!hitWall && distanceToObject < m_depth)
-			{
-				distanceToObject += 0.1f;
-
-				int testX = static_cast<int>(m_playerPos.x + eyeX * distanceToObject);
-				int testY = static_cast<int>(m_playerPos.y + eyeY * distanceToObject);
-				if (testX < 0 || testX >= m_mapSize.x || testY < 0 || testY >= m_mapSize.y)
-				{
-					hitWall = true;
-					distanceToObject = m_depth;
-				}
-				else
-				{
-					if (m_worldMap.GetElement({testX, testY}) == '#')
-					{
-						hitWall = true;
-					}
-				}
-
-			}
-			int ceiling = (float)(m_screenHeight/2.0) - m_screenHeight / ((float)distanceToObject);
-			int floor = m_screenHeight - ceiling;
-
-			std::wstring chars = L"@&%QWNM0gB$#DR8mHXKAUbGOpV4d9h6PkqwSE2]ayjxY5Zoen[ult13If}C{iF|(7J)vTLs?z/*cr!+<>;=^,_:'-.` ";
-
-			int idx = (distanceToObject / m_depth) * chars.size();
-
-			wchar_t shade = chars[idx];
-			for (int y = 0; y < m_screenHeight; y++)
-			{
-				if (y < ceiling)
-					m_screenBuffer[y * m_screenWidth + x] = ' ';
-				else if (y > ceiling && y < floor)
-				{
-					m_screenBuffer[y * m_screenWidth + x] = shade;
-				}
-				else
-				{
-					float b = 1.0f - (((float)y - m_screenHeight / 2.0f) / ((float)m_screenHeight / 2.0f));
-					int idx2 = b * chars.size();
-					short otherShade;
-					if (b > 1.0f) otherShade = ' ';
-					 else otherShade = chars[idx2];
-					// if (b < 0.25f)		otherShade = '#';
-					// else if (b < 0.5f)	otherShade = 'x';
-					// else if (b < 0.75f)	otherShade = '-';
-					// else if (b < 0.9f)	otherShade = '.';
-					// else				otherShade = ' ';
-					m_screenBuffer[y * m_screenWidth + x] = otherShade;
-				}
-			}
-		}
+		Render();
+		//
+		// const auto& spheres = m_worldMap.GetSpheres();
+		//
+		// for (int x = 0; x < m_screenWidth; ++x)
+		// {
+		// 	float fRayAngle = (m_playerAngle - m_FOV / 2.0f) + (static_cast<float>(x) / static_cast<float>(m_screenWidth)) * m_FOV;
+		//
+		// 	float eyeX = sinf(fRayAngle);
+		// 	float eyeY = cosf(fRayAngle);
+		//
+		// 	float distanceToObject = 0.0f;
+		// 	Math::Vector2f collision = Math::Vector2f(0.0f, 0.0f);
+		// 	bool hitWall = false;
+		//
+		//
+		// 	Math::Ray ray{m_playerPos, {eyeX, eyeY}};
+		// 	
+		// 	while (!hitWall && distanceToObject < m_depth)
+		// 	{
+		// 		distanceToObject += 0.1f;
+		//
+		// 		int testX = static_cast<int>(m_playerPos.x + eyeX * distanceToObject);
+		// 		int testY = static_cast<int>(m_playerPos.y + eyeY * distanceToObject);
+		// 		if (testX < 0 || testX >= m_mapSize.x || testY < 0 || testY >= m_mapSize.y)
+		// 		{
+		// 			hitWall = true;
+		// 			distanceToObject = m_depth;
+		// 		}
+		// 		else
+		// 		{
+		// 			if (m_worldMap.GetElement({testX, testY}) == '#')
+		// 			{
+		// 				hitWall = true;
+		// 			}
+		// 		}
+		//
+		// 	}
+		// 	int ceiling = (float)(m_screenHeight/2.0) - m_screenHeight / ((float)distanceToObject);
+		// 	int floor = m_screenHeight - ceiling;
+		//
+		// 	std::wstring chars = L"@&%QWNM0gB$#DR8mHXKAUbGOpV4d9h6PkqwSE2]ayjxY5Zoen[ult13If}C{iF|(7J)vTLs?z/*cr!+<>;=^,_:'-.` ";
+		//
+		// 	int idx = (distanceToObject / m_depth) * chars.size();
+		//
+		// 	wchar_t shade = chars[idx];
+		// 	for (int y = 0; y < m_screenHeight; y++)
+		// 	{
+		// 		if (y < ceiling)
+		// 			m_screenBuffer[y * m_screenWidth + x] = ' ';
+		// 		else if (y > ceiling && y < floor)
+		// 		{
+		// 			m_screenBuffer[y * m_screenWidth + x] = shade;
+		// 		}
+		// 		else
+		// 		{
+		// 			float b = 1.0f - (((float)y - m_screenHeight / 2.0f) / ((float)m_screenHeight / 2.0f));
+		// 			int idx2 = b * chars.size();
+		// 			short otherShade;
+		// 			if (b > 1.0f) otherShade = ' ';
+		// 			 else otherShade = chars[idx2];
+		// 			// if (b < 0.25f)		otherShade = '#';
+		// 			// else if (b < 0.5f)	otherShade = 'x';
+		// 			// else if (b < 0.75f)	otherShade = '-';
+		// 			// else if (b < 0.9f)	otherShade = '.';
+		// 			// else				otherShade = ' ';
+		// 			m_screenBuffer[y * m_screenWidth + x] = otherShade;
+		// 		}
+		// 	}
+		// }
 		
 	}
 

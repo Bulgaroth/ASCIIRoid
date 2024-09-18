@@ -18,6 +18,7 @@ namespace ConsoleRenderer
 		void Draw(int x, int y, const std::wstring& str) const;
 
 		void Render();
+		void PushBuffer();
 
 		void ClearScreen(char fill = ' ') const;
 
@@ -29,6 +30,9 @@ namespace ConsoleRenderer
 		void Update();
 
 	private:
+		wchar_t PerPixel(Math::Vector2f coord) const;
+
+	public:
 		HANDLE m_handle;
 		wchar_t* m_screenBuffer;
 		int m_screenWidth, m_screenHeight;
