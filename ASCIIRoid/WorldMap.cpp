@@ -27,9 +27,8 @@ WorldMap::WorldMap(Math::Vector2i mapSize): m_size(mapSize)
             if (GetElement({x, y}) == L'#')
             {
                 elements.push_back(
-                    Math::Sphere{
-                        Math::Vector2f{
-                            static_cast<float>(x), static_cast<float>(y)
+                    Math::Sphere{{
+                            static_cast<float>(x), 0, static_cast<float>(y)
                         },0.5f
                     });
             }

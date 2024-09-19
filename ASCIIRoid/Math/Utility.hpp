@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "Vector2.hpp"
+#include "Vector3.hpp"
 
 namespace Math {
 	inline bool SolveQuadratic(const float &a, const float &b, const float &c, float &x0, float &x1)
@@ -28,7 +29,7 @@ namespace Math {
 	class Ray
 	{
 	public:
-		Vector2f origin;
-		Vector2f direction;
+		Vector3f origin;
+		Vector3f direction;
 	};
 }

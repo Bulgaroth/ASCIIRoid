@@ -95,8 +95,7 @@ namespace ConsoleRenderer
 		for (const auto& sphere : m_worldMap.GetSpheres())
 		{
 			float radius = sphere.radius;
-			auto spherePos = Math::Vector3f(sphere.center.x, 0, sphere.center.y);
-
+			auto spherePos = sphere.center;
 			auto origin = rayOrigin - spherePos;
 			float b = 2.0f * origin.Dot(rayDirection);
 			float c = origin.Dot(origin) - radius * radius;

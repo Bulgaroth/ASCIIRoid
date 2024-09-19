@@ -10,13 +10,12 @@ namespace Math
 	class Sphere
 	{
 	public:
-		Vector2f center;
+		Vector3f center;
 		float radius;
 
-		bool Intersect(const Ray& ray, Vector2f& position, float& distance) const
+		bool Intersect(const Ray& ray, Vector3f& position, float& distance) const
 		{
-
-			Vector2f d = ray.origin - center;
+			Vector3f d = ray.origin - center;
 
 			float p1 = -1 * ray.direction.Dot(d);
 			float p2sqr = pow(p1, 2) - d.Dot(d) + pow(radius, 2);
