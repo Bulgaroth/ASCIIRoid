@@ -14,6 +14,8 @@
 
 Controller::Controller(Math::Vector2i size) : m_size(size)
 {
+	end = false; 
+
 	for (int i = 0; i < 10; i++) SpawnAsteroid();
 
 	m_hOutput = (HANDLE)GetStdHandle(STD_OUTPUT_HANDLE);
@@ -23,6 +25,7 @@ Controller::Controller(Math::Vector2i size) : m_size(size)
 Controller::~Controller()
 {
 	for (int i = 0; i < m_asteroids.size(); ++i) delete m_asteroids[i];
+	for (int i = 0; i < m_projectiles.size(); ++i) delete m_projectiles[i];
 }
 #pragma endregion
 
@@ -51,9 +54,6 @@ void Controller::DrawMap()
 	COORD dwBufferSize = { SCREEN_WIDTH, SCREEN_HEIGHT };
 	COORD dwBufferCoord = { 0, 0 };
 	SMALL_RECT rcRegion = { 0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1 };
-
-	/*ReadConsoleOutput(m_hOutput, (CHAR_INFO*)m_buffer, dwBufferSize,
-		dwBufferCoord, &rcRegion);*/
 
 	for (const auto& asteroid : m_asteroids) DrawAsteroid(*asteroid);
 
@@ -93,7 +93,7 @@ void Controller::DrawAsteroid(const Asteroid& asteroid)
 		case 2:
 			start = -2;
 			break;
-		case 3: start = -3;
+		case 3: start = -4;
 			break;
 		default: start = 0;
 	}
@@ -117,6 +117,18 @@ void Controller::ClearMap()
 	{
 		std::fill_n(m_buffer[y], SCREEN_WIDTH, CHAR_INFO{});
 	}
+}
+
+void Controller::DrawEndScreen()
+{
+	COORD dwBufferSize = { SCREEN_WIDTH, SCREEN_HEIGHT };
+	COORD dwBufferCoord = { 0, 0 };
+	SMALL_RECT rcRegion = { 0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1 };
+
+	ClearMap();
+
+	WriteConsoleOutput(m_hOutput, (CHAR_INFO*)m_buffer, dwBufferSize,
+		dwBufferCoord, &rcRegion);
 }
 #pragma endregion
 
@@ -177,6 +189,8 @@ void Controller::Shoot()
 #pragma endregion
 
 #pragma endregion
+
+#pragma region Spawn
 
 void Controller::SpawnAsteroid()
 {
@@ -254,6 +268,7 @@ std::pair<Asteroid*, Asteroid*> Controller::GetSplitAsteroids(Math::Vector2f pos
 
 	return std::make_pair(new Asteroid{ size - 1, pos + posDelta, velocity }, new Asteroid{ size - 1, pos - posDelta, -velocity });
 }
+#pragma endregion
 
 void Controller::HandleCollisions()
 {
@@ -261,30 +276,35 @@ void Controller::HandleCollisions()
 	for (auto itr = m_asteroids.begin(); itr != m_asteroids.end(); ++itr)
 	{
 		Asteroid* asteroid = *itr;
-		const Math::Vector2f pos = asteroid->GetPosF();
-		if (pos == m_playerPos)
+		const Math::Vector2f asteroidCenter = asteroid->GetPosF();
+		if (Math::Vector2f::Distance(asteroidCenter, m_playerPos) <= asteroid->GetSize())
 		{
-			// GAME OVER
-			//return;
+ 			DrawEndScreen();
+			end = true;
+			return;
 		}
 	}
 
 	std::vector<Asteroid*> asteroidsToSpawn{};
 
+	bool projectileHit = false;
 	// Vérification des destructions d'astéroides.
-	for (auto projItr = m_projectiles.begin(); projItr != m_projectiles.end(); ++projItr)
+	for (auto projItr = m_projectiles.begin(); projItr != m_projectiles.end();)
 	{
 		Asteroid* projectile = *projItr;
 		const Math::Vector2f projPos = projectile->GetPosF();
 		for (auto asterItr = m_asteroids.begin(); asterItr != m_asteroids.end();)
 		{
 			Asteroid* asteroid = *asterItr;
-			const Math::Vector2f asterPos = asteroid->GetPosF();
-			if (projPos == asterPos)
+			const Math::Vector2f asteroidCenter = asteroid->GetPosF();
+
+			if (Math::Vector2f::Distance(projPos, asteroidCenter) <= asteroid->GetSize())
 			{
+				projectileHit = true;
+
  				if (asteroid->GetSize() > 1)
 				{
-					auto splitAsteroids = GetSplitAsteroids(asterPos, asteroid->GetSize());
+					auto splitAsteroids = GetSplitAsteroids(asteroidCenter, asteroid->GetSize());
 					asteroidsToSpawn.push_back(splitAsteroids.first);
 					asteroidsToSpawn.push_back(splitAsteroids.second);
 				}
@@ -294,6 +314,12 @@ void Controller::HandleCollisions()
 			}
 			else ++asterItr;
 		}
+		if (projectileHit)
+		{
+			projItr = m_projectiles.erase(projItr);
+			delete projectile;
+		}
+		else ++projItr;
 	}
 
 	for (const auto& asteroid : asteroidsToSpawn) SpawnAsteroid(asteroid);

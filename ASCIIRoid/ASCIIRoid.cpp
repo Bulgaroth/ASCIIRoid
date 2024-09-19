@@ -10,14 +10,16 @@ int main(int argc, char* argv[])
 {
 	Math::Vector2i gridSize(156, 46);
 	Controller ctrl(gridSize);
-	ConsoleRenderer::ConsoleWindow window(gridSize.x, gridSize.y);
 
 	bool playing = true;
-	while (playing)
+	while (!ctrl.end)
 	{
 		ctrl.Update();
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
+
+	std::cout << "You lose" << std::endl;
+	std::cin.get();
 
 	return 0;
 }

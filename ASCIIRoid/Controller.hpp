@@ -11,11 +11,12 @@
 class Controller
 {
 public:
+	bool end;
+
 	Controller(Math::Vector2i size);
 	~Controller();
 
 	void Update();
-	
 
 private:
 	Math::Vector2i m_size;
@@ -47,10 +48,12 @@ private:
 
 	void DrawMap();
 	void DrawAsteroid(const Asteroid& asteroid);
+	void ClearMap();
+	void DrawEndScreen();
 
 	bool CheckOutOfBounds(const Math::Vector2f& pos);
 	bool CheckOutOfBounds(const int& x, const int& y);
-	void ClearMap();
+
 	void HandleInputs();
 	void TurnPlayer(bool left);
 	void Shoot();

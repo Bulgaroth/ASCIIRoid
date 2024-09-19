@@ -14,7 +14,7 @@ namespace Math
 
 		T x, y;
 
-		inline float Distance(Vector2 a, Vector2 b) const
+		static inline float Distance(Vector2<T> a, Vector2<T> b)
 		{
 			return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 		}
