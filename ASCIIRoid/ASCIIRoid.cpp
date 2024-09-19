@@ -10,15 +10,13 @@ int main(int argc, char* argv[])
 {
 	Math::Vector2i gridSize(156, 46);
 	Controller ctrl(gridSize);
-
 	ConsoleRenderer::ConsoleWindow window(gridSize.x, gridSize.y);
-	std::cout << window << "\n";
 
 	bool playing = true;
 	while (playing)
 	{
 		ctrl.Update();
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
 	return 0;

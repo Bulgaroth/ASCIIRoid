@@ -7,18 +7,16 @@
 class Asteroid : public Entity
 {
 public:
-	Asteroid(int size, int color, Math::Vector2i pos, Math::Vector2i velocity = Math::Vector2i::zero);
+	Asteroid(int size, Math::Vector2f pos, Math::Vector2f velocity = Math::Vector2f::zero);
 	~Asteroid() = default;
 
 	virtual void Update() override;
-	virtual void Hit();
-	void Separate();
 
 	const int& GetColor() const { return m_color; }
-
-	void Delete();
+	const int& GetSize() const { return m_size; }
+	wchar_t GetChar() const;
 
 private:
 	int m_size, m_color;
-	Math::Vector2i m_velocity;
+	Math::Vector2f m_velocity;
 };
