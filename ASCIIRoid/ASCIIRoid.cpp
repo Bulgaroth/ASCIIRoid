@@ -2,25 +2,20 @@
 #include <sstream>
 
 #include "ConsoleRenderer/ConsoleRenderer.hpp"
+#include "Controller.hpp"
+#include <chrono>
+#include <thread>
 #include "Math/Vector2.hpp"
+#include "Controller.hpp"
 
 int main(int argc, char* argv[])
 {
 	std::cout << "Resize the console window..\n";
 	std::cin.get();
 	Math::Vector2i size(156, 46);
+	Controller ctrl(size);
 	ConsoleRenderer::ConsoleWindow window(size.x, size.y);
-
-
-	// std::cout << "Please set the console to fullscreen...\n";
-	// std::cin.get();
-	//
-	// window.ClearScreen();
-	//
-	// std::cout << "Window size is " << window << '\n';
-	// std::cin.get();
-
-	while (true)
+	while (!ctrl.end)
 	{
 		window.Update();
 	
@@ -29,9 +24,11 @@ int main(int argc, char* argv[])
 		ss << "Player position is " << window.m_playerPos.x << ", 0, " << window.m_playerPos.y;
 		window.Draw(0, 0, ss.str());
 
+		ctrl.Update();
 		window.PushBuffer();
+		// std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	
-	return 0;
+	std::cout << "GAME OVER ! Your Score : " << ctrl.score << std::endl;
+	std::cin.get();
 }
