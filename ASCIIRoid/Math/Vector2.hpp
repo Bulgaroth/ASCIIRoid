@@ -11,6 +11,7 @@ namespace Math
 		Vector2() : x(0), y(0) {}
 		Vector2(T x, T y) : x(x), y(y) {}
 		~Vector2() = default;
+		static Vector2 zero;
 
 		T x, y;
 
@@ -66,10 +67,17 @@ namespace Math
 		}
 		
 
-		Vector2<T> operator - ()
+		Vector2 operator - ()
 		{
 			return Vector2<T>{ -x, -y};
 		}
+
+		Vector2& operator += (const Vector2& other)
+		{
+			*this = *this + other;
+			return *this;
+		}
+
 	};
 
 	template<typename T>
