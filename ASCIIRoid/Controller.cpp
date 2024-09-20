@@ -4,6 +4,9 @@
 #include <vector>
 
 #include "Controller.hpp"
+
+#include <chrono>
+
 #include "Asteroid.hpp"
 
 #define MAX_ENTITIES 150
@@ -19,7 +22,6 @@ Controller::Controller(Math::Vector2i size) : m_size(size)
 	for (int i = 0; i < 5; i++) SpawnAsteroid();
 
 	m_hOutput = (HANDLE)GetStdHandle(STD_OUTPUT_HANDLE);
-	m_shootOriginPos = m_playerPos + m_neighboors[m_shootPosIndex];
 }
 
 Controller::~Controller()
@@ -33,13 +35,18 @@ Controller::~Controller()
 
 void Controller::Update()
 {
-	if (++m_nbFrames >= 10)
+	auto now = std::chrono::system_clock::now();
+	std::chrono::duration<float> duration = now - m_lastTime;
+	m_lastTime = now;
+	dt = duration.count();
+	if (++m_nbFrames >= 1000)
 	{
 		m_nbFrames = 0;
 		SpawnAsteroid();
 	}
 
 	HandleInputs();
+	CheckShoot();
 	UpdateElements(m_asteroids);
 	UpdateElements(m_projectiles);
 	ClearMap();
@@ -52,7 +59,7 @@ void Controller::UpdateElements(std::vector<Asteroid*>& list)
 	for (auto itr = list.begin(); itr != list.end(); )
 	{
 		Asteroid* el = *itr;
-		el->Update();
+		el->Update(dt);
 
 		if (CheckOutOfBounds(el->GetPosF()))
 		{
@@ -65,12 +72,12 @@ void Controller::UpdateElements(std::vector<Asteroid*>& list)
 
 void Controller::HandleCollisions()
 {
-	// Vérification de la condition de défaite.
+	// Vï¿½rification de la condition de dï¿½faite.
 	for (auto itr = m_asteroids.begin(); itr != m_asteroids.end(); ++itr)
 	{
 		Asteroid* asteroid = *itr;
 		const Math::Vector2i asteroidCenter = asteroid->GetPos();
-		float dst = Math::Vector2i::Distance(asteroidCenter, GetPlayerPos());
+		float dst = Math::Vector2i::Distance(asteroidCenter, m_player.GetPos<int>());
 
 		if (dst < asteroid->GetSize())
 		{
@@ -83,7 +90,7 @@ void Controller::HandleCollisions()
 	std::vector<Asteroid*> asteroidsToSpawn{};
 
 	bool projectileHit = false;
-	// Vérification des destructions d'astéroides.
+	// Vï¿½rification des destructions d'astï¿½roides.
 	for (auto projItr = m_projectiles.begin(); projItr != m_projectiles.end();)
 	{
 		Asteroid* projectile = *projItr;
@@ -141,8 +148,8 @@ void Controller::DrawMap()
 		cell.Attributes = projectile->GetColor();
 	}
 
-	const Math::Vector2i& playerPos = GetPlayerPos();
-	const Math::Vector2i& shootPos = { static_cast<int>(m_shootOriginPos.x), static_cast<int>(m_shootOriginPos.y) };
+	const Math::Vector2i& playerPos = m_player.GetPos<int>();
+	const Math::Vector2i& shootPos = m_player.GetCanonPos<int>();
 
 	CHAR_INFO& playerCell = m_buffer[playerPos.y][playerPos.x];
 	playerCell.Char.UnicodeChar = L'A';
@@ -202,45 +209,15 @@ void Controller::DrawEndScreen()
 
 void Controller::HandleInputs()
 {
-	if (GetAsyncKeyState((unsigned short)'Q') & 0x8000 ||
-		GetAsyncKeyState(VK_LEFT) & 0x8000)
-	{
-		if (!m_keyDownL) TurnPlayer(true);
-		m_keyDownL = true;
-	}
-	else m_keyDownL = false;
-
-	if (GetAsyncKeyState((unsigned short)'D') & 0x8000 ||
-		GetAsyncKeyState(VK_RIGHT) & 0x8000)
-	{
-		if (!m_keyDownR) TurnPlayer(false);
-		m_keyDownR = true;
-	}
-	else m_keyDownR = false;
-
-	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
-	{
-		if (!m_keyDownS) Shoot();
-		m_keyDownS = true;
-	}
-	else m_keyDownS = false;
+	m_player.HandleInput(dt);
 }
 
-void Controller::TurnPlayer(bool left)
+void Controller::CheckShoot()
 {
-	m_shootPosIndex += left ? -1 : 1;
+	if (!m_player.IsShooting()) return;
 
-	if (m_shootPosIndex < 0) m_shootPosIndex = m_neighboors.size() - 1;
-	if (m_shootPosIndex > m_neighboors.size() - 1) m_shootPosIndex = 0;
-
-	m_shootOriginPos = m_playerPos + m_neighboors[m_shootPosIndex];
-}
-
-void Controller::Shoot()
-{
-	Math::Vector2f delta = m_neighboors[m_shootPosIndex];
-	Math::Vector2f velocity(delta.x, delta.y);
-	SpawnProjectile(m_shootOriginPos + delta, velocity);
+	auto velocity = m_player.GetProjectileVelocity<float>();
+	SpawnProjectile(m_player.GetCanonPos<float>() + velocity, velocity);
 }
 #pragma endregion
 
@@ -250,7 +227,7 @@ void Controller::Shoot()
 
 void Controller::SpawnAsteroid()
 {
-	// Initialisation du générateur de nombre aléatoire.
+	// Initialisation du gï¿½nï¿½rateur de nombre alï¿½atoire.
 	std::random_device rd;
 	std::mt19937 mt(rd());
 
@@ -259,19 +236,19 @@ void Controller::SpawnAsteroid()
 	std::uniform_int_distribution<int> sizeDist(1, 3);
 	std::uniform_int_distribution<int> velocityDist(-1, 2);
 
-	// Index de la zone de spawn (0 en haut, 1 à droite, 2 en bas, 3 à gauche de la console)
+	// Index de la zone de spawn (0 en haut, 1 ï¿½ droite, 2 en bas, 3 ï¿½ gauche de la console)
 	int spawnZoneIndex = zoneDist(mt);
-	// Génération aléatoire de la taille de l'astéroide.
+	// Gï¿½nï¿½ration alï¿½atoire de la taille de l'astï¿½roide.
 	int size = sizeDist(mt);
 
-	// Distribution sur la totalité de la bound en fonction de si elle est horizontale ou verticale.
+	// Distribution sur la totalitï¿½ de la bound en fonction de si elle est horizontale ou verticale.
 	std::uniform_int_distribution<int> posDist;
 	posDist = (spawnZoneIndex == 0 || spawnZoneIndex == 2) ?
 		std::uniform_int_distribution<int>(1, SCREEN_WIDTH - 2) :
 		std::uniform_int_distribution<int>(1, SCREEN_HEIGHT - 2);
 
-	// Placement de l'astéroide sur l'une des bounds de la console et
-	// génération de sa vélocité initiale.
+	// Placement de l'astï¿½roide sur l'une des bounds de la console et
+	// gï¿½nï¿½ration de sa vï¿½locitï¿½ initiale.
 	Math::Vector2f pos;
 	Math::Vector2f velocity;
 	switch (spawnZoneIndex)
@@ -312,26 +289,23 @@ void Controller::SpawnProjectile(Math::Vector2f pos, Math::Vector2f velocity)
 
 std::pair<Asteroid*, Asteroid*> Controller::GetSplitAsteroids(Math::Vector2f pos, int size)
 {
-	// Initialisation du générateur de nombre aléatoire.
+	// Initialisation du gï¿½nï¿½rateur de nombre alï¿½atoire.
 	std::random_device rd;
 	std::mt19937 mt(rd());
 
 	// Initialisation de la distribution.
-	std::uniform_int_distribution<int> dist(0, m_neighboors.size() - 1);
+	std::uniform_int_distribution<int> dist(0, 7); // 8 directions possibles.
 
-	Math::Vector2f posDelta = m_neighboors[dist(mt)];
+	Math::Vector2f posDelta = Math::Utility::Neighbours[dist(mt)];
 	Math::Vector2f velocity(posDelta.x, posDelta.y);
 
+	// Heap allocated. Will be deleted either in the HandleCollisions method or in the destructor.
 	return std::make_pair(new Asteroid{ size - 1, pos + posDelta, velocity }, new Asteroid{ size - 1, pos - posDelta, -velocity });
 }
 #pragma endregion
 
-bool Controller::CheckOutOfBounds(const Math::Vector2f& pos)
-{
-	return pos.x < 0 || pos.x > m_size.x || pos.y < 0 || pos.y > m_size.y;
-}
-
-bool Controller::CheckOutOfBounds(const Math::Vector2i& pos)
+template<typename T>
+bool Controller::CheckOutOfBounds(const Math::Vector2<T>& pos) const
 {
 	return pos.x < 0 || pos.x > m_size.x || pos.y < 0 || pos.y > m_size.y;
 }

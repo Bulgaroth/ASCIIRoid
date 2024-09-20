@@ -16,10 +16,10 @@ Asteroid::Asteroid(int size, Math::Vector2f pos, Math::Vector2f velocity)
 	}
 }
 
-void Asteroid::Update()
+void Asteroid::Update(float dt)
 {
 	if (m_velocity == Math::Vector2f::zero) return;
-	m_pos += m_velocity;
+	m_pos += m_velocity * dt * 15;
 }
 
 wchar_t Asteroid::GetChar(const Math::Vector2i &charPos) const
@@ -28,25 +28,21 @@ wchar_t Asteroid::GetChar(const Math::Vector2i &charPos) const
 
 	if (charPos.x == -m_size)
 	{
-		if (charPos.y == -m_size) return  L'╭';
-		if (charPos.y == m_size) return  L'╰';
+		if (charPos.y == -m_size) return  0x256D;
+		if (charPos.y == m_size) return  0x2570;
 		return  L'|';
 	}
 
 	if (charPos.x == m_size)
 	{
-		if (charPos.y == -m_size) return  L'╮';
-		if (charPos.y == m_size) return  L'╯';
+		if (charPos.y == -m_size) return  0x256E;
+		if (charPos.y == m_size) return  0x256F;
 		return L'|';
 	}
 
-	if (charPos.y == m_size)
+	if (charPos.y == m_size || charPos.y == -m_size)
 	{
-		return L'─';
-	}
-	if (charPos.y == -m_size)
-	{
-		return L'─';
+		return 0x2500;
 	}
 
 	switch (m_size)

@@ -10,6 +10,8 @@ namespace Math
 	public:
 		Vector2() : x(0), y(0) {}
 		Vector2(T x, T y) : x(x), y(y) {}
+		template<typename TT>
+		Vector2(const Vector2<TT>& other) : x(other.x), y(other.y) {}
 		~Vector2() = default;
 		static Vector2 zero;
 

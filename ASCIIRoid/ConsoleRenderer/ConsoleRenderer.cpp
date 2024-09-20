@@ -29,7 +29,8 @@ namespace ConsoleRenderer
 		// SendInput(2, inp, sizeof(INPUT));
 		
 		// m_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-		m_screenBuffer = new wchar_t[m_screenWidth * m_screenHeight];
+		Reallocate();
+		
 		m_handle = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
 		SetConsoleActiveScreenBuffer(m_handle);
 
@@ -49,13 +50,13 @@ namespace ConsoleRenderer
 		{
 			if (x >= 0 && x < m_screenWidth && y >= 0 && y < m_screenHeight)
 			{
-				m_screenBuffer[y * m_screenWidth + x + i] = str[i];
+				m_screenBuffer[y * m_screenWidth + x + i].Char.UnicodeChar = str[i];
 			}
 		}
 		
 	}
 
-	void ConsoleWindow::Render()
+	void ConsoleWindow::Render() const
 	{
 		for (uint32_t y = 0; y < m_screenHeight; y++)
 		{
@@ -66,7 +67,8 @@ namespace ConsoleRenderer
 					static_cast<float>(y) / static_cast<float>(m_screenHeight)
 				};
 				coord = coord * 2.0f - 1.0f;
-				m_screenBuffer[x + y * m_screenWidth] = PerPixel(coord);
+				m_screenBuffer[x + y * m_screenWidth].Char.UnicodeChar = PerPixel(coord);
+				m_screenBuffer[x + y * m_screenWidth].Attributes = 0x0F;
 			}
 		}
 	}
@@ -133,10 +135,13 @@ namespace ConsoleRenderer
 		return result;
 	}
 
-	void ConsoleWindow::PushBuffer()
+	void ConsoleWindow::PushBuffer() const
 	{
-		m_screenBuffer[m_screenWidth * m_screenHeight - 1] = '\0';
-		WriteConsoleOutputCharacter(m_handle, m_screenBuffer, m_screenWidth * m_screenHeight, { 0,0 }, &m_dwBytesWritten);
+		COORD dwBufferSize = { static_cast<short>(m_screenWidth), static_cast<short>(m_screenHeight)};
+		COORD dwBufferCoord = { 0, 0 };
+		SMALL_RECT rcRegion = { 0, 0, static_cast<short>(m_screenWidth - 1), static_cast<short>(m_screenHeight- 1) };
+		WriteConsoleOutput(m_handle, m_screenBuffer, dwBufferSize, dwBufferCoord, &rcRegion);
+		// WriteConsoleOutputCharacter(m_handle, m_screenBuffer, m_screenWidth * m_screenHeight, { 0,0 }, &m_dwBytesWritten);
 	}
 
 	void ConsoleWindow::ClearScreen(char fill) const
@@ -171,10 +176,9 @@ namespace ConsoleRenderer
 
 		if (size.x != m_screenWidth || size.y != m_screenHeight)
 		{
-			delete[] m_screenBuffer;
-			m_screenBuffer = new wchar_t[size.x * size.y];
 			m_screenWidth = size.x;
 			m_screenHeight = size.y;
+			Reallocate();
 			ClearScreen();
 		}
 

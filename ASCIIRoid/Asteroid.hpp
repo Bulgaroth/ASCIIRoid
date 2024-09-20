@@ -10,7 +10,7 @@ public:
 	Asteroid(int size, Math::Vector2f pos, Math::Vector2f velocity = Math::Vector2f::zero);
 	~Asteroid() = default;
 
-	virtual void Update() override;
+	virtual void Update(float dt) override;
 
 	const int& GetColor() const { return m_color; }
 	const int& GetSize() const { return m_size; }
