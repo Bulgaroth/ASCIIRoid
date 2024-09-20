@@ -12,6 +12,7 @@ class Controller
 {
 public:
 	bool end;
+	int score;
 
 	Controller(Math::Vector2i size);
 	~Controller();
@@ -52,7 +53,7 @@ private:
 	void DrawEndScreen();
 
 	bool CheckOutOfBounds(const Math::Vector2f& pos);
-	bool CheckOutOfBounds(const int& x, const int& y);
+	bool CheckOutOfBounds(const Math::Vector2i& pos);
 
 	void HandleInputs();
 	void TurnPlayer(bool left);

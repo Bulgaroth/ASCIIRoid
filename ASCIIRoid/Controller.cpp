@@ -16,7 +16,7 @@ Controller::Controller(Math::Vector2i size) : m_size(size)
 {
 	end = false; 
 
-	for (int i = 0; i < 10; i++) SpawnAsteroid();
+	for (int i = 0; i < 5; i++) SpawnAsteroid();
 
 	m_hOutput = (HANDLE)GetStdHandle(STD_OUTPUT_HANDLE);
 	m_shootOriginPos = m_playerPos + m_neighboors[m_shootPosIndex];
@@ -42,9 +42,84 @@ void Controller::Update()
 	HandleInputs();
 	UpdateElements(m_asteroids);
 	UpdateElements(m_projectiles);
-	HandleCollisions();
 	ClearMap();
 	DrawMap();
+	HandleCollisions();
+}
+
+void Controller::UpdateElements(std::vector<Asteroid*>& list)
+{
+	for (auto itr = list.begin(); itr != list.end(); )
+	{
+		Asteroid* el = *itr;
+		el->Update();
+
+		if (CheckOutOfBounds(el->GetPosF()))
+		{
+			itr = list.erase(itr);
+			delete el;
+		}
+		else itr++;
+	}
+}
+
+void Controller::HandleCollisions()
+{
+	// Vérification de la condition de défaite.
+	for (auto itr = m_asteroids.begin(); itr != m_asteroids.end(); ++itr)
+	{
+		Asteroid* asteroid = *itr;
+		const Math::Vector2i asteroidCenter = asteroid->GetPos();
+		float dst = Math::Vector2i::Distance(asteroidCenter, GetPlayerPos());
+
+		if (dst < asteroid->GetSize())
+		{
+    		DrawEndScreen();
+			end = true;
+			return;
+		}
+	}
+
+	std::vector<Asteroid*> asteroidsToSpawn{};
+
+	bool projectileHit = false;
+	// Vérification des destructions d'astéroides.
+	for (auto projItr = m_projectiles.begin(); projItr != m_projectiles.end();)
+	{
+		Asteroid* projectile = *projItr;
+		const Math::Vector2f projPos = projectile->GetPosF();
+		for (auto asterItr = m_asteroids.begin(); asterItr != m_asteroids.end();)
+		{
+			Asteroid* asteroid = *asterItr;
+			const Math::Vector2f asteroidCenter = asteroid->GetPosF();
+
+			if (Math::Vector2f::Distance(projPos, asteroidCenter) <= asteroid->GetSize())
+			{
+				projectileHit = true;
+
+				if (asteroid->GetSize() > 1)
+				{
+					auto splitAsteroids = GetSplitAsteroids(asteroidCenter, asteroid->GetSize());
+					asteroidsToSpawn.push_back(splitAsteroids.first);
+					asteroidsToSpawn.push_back(splitAsteroids.second);
+				}
+
+				++score;
+
+				asterItr = m_asteroids.erase(asterItr);
+				delete asteroid;
+			}
+			else ++asterItr;
+		}
+		if (projectileHit)
+		{
+			projItr = m_projectiles.erase(projItr);
+			delete projectile;
+		}
+		else ++projItr;
+	}
+
+	for (const auto& asteroid : asteroidsToSpawn) SpawnAsteroid(asteroid);
 }
 
 #pragma region Affichage
@@ -62,7 +137,7 @@ void Controller::DrawMap()
 		const Math::Vector2i& pos = projectile->GetPos();
 
 		CHAR_INFO& cell = m_buffer[pos.y][pos.x];
-		cell.Char.UnicodeChar = projectile->GetChar();
+		cell.Char.UnicodeChar = projectile->GetChar(pos);
 		cell.Attributes = projectile->GetColor();
 	}
 
@@ -84,28 +159,19 @@ void Controller::DrawMap()
 void Controller::DrawAsteroid(const Asteroid& asteroid)
 {
 	const Math::Vector2i& center = asteroid.GetPos();
-	int start, end;
-
-	switch (asteroid.GetSize())
-	{
-		case 1: start = -1;
-			break;
-		case 2:
-			start = -2;
-			break;
-		case 3: start = -4;
-			break;
-		default: start = 0;
-	}
-	end = -start;
+	int start = -asteroid.GetSize();
+	int end = -start;
 
 	for (int y = start; y <= end; ++y)
 	{
 		for (int x = start; x <= end; ++x)
 		{
-			if (CheckOutOfBounds(x, y)) continue;
-			CHAR_INFO &cell = m_buffer[center.y + y][center.x + x];
-			cell.Char.UnicodeChar = asteroid.GetChar();
+			const Math::Vector2i& pos{ center.x + x, center.y + y };
+			const Math::Vector2i& charPos{ x, y };
+
+			if (CheckOutOfBounds(pos)) continue;
+			CHAR_INFO &cell = m_buffer[pos.y][pos.x];
+			cell.Char.UnicodeChar = asteroid.GetChar(charPos);
 			cell.Attributes = asteroid.GetColor();
 		}
 	}
@@ -131,16 +197,6 @@ void Controller::DrawEndScreen()
 		dwBufferCoord, &rcRegion);
 }
 #pragma endregion
-
-bool Controller::CheckOutOfBounds(const Math::Vector2f& pos)
-{
-	return pos.x < 0 || pos.x > m_size.x || pos.y < 0 || pos.y > m_size.y;
-}
-
-bool Controller::CheckOutOfBounds(const int& x, const int& y)
-{
-	return x < 0 || x > m_size.x || y < 0 || y > m_size.y;
-}
 
 #pragma region Inputs
 
@@ -270,73 +326,15 @@ std::pair<Asteroid*, Asteroid*> Controller::GetSplitAsteroids(Math::Vector2f pos
 }
 #pragma endregion
 
-void Controller::HandleCollisions()
+bool Controller::CheckOutOfBounds(const Math::Vector2f& pos)
 {
-	// Vérification de la condition de défaite.
-	for (auto itr = m_asteroids.begin(); itr != m_asteroids.end(); ++itr)
-	{
-		Asteroid* asteroid = *itr;
-		const Math::Vector2f asteroidCenter = asteroid->GetPosF();
-		if (Math::Vector2f::Distance(asteroidCenter, m_playerPos) <= asteroid->GetSize())
-		{
- 			DrawEndScreen();
-			end = true;
-			return;
-		}
-	}
-
-	std::vector<Asteroid*> asteroidsToSpawn{};
-
-	bool projectileHit = false;
-	// Vérification des destructions d'astéroides.
-	for (auto projItr = m_projectiles.begin(); projItr != m_projectiles.end();)
-	{
-		Asteroid* projectile = *projItr;
-		const Math::Vector2f projPos = projectile->GetPosF();
-		for (auto asterItr = m_asteroids.begin(); asterItr != m_asteroids.end();)
-		{
-			Asteroid* asteroid = *asterItr;
-			const Math::Vector2f asteroidCenter = asteroid->GetPosF();
-
-			if (Math::Vector2f::Distance(projPos, asteroidCenter) <= asteroid->GetSize())
-			{
-				projectileHit = true;
-
- 				if (asteroid->GetSize() > 1)
-				{
-					auto splitAsteroids = GetSplitAsteroids(asteroidCenter, asteroid->GetSize());
-					asteroidsToSpawn.push_back(splitAsteroids.first);
-					asteroidsToSpawn.push_back(splitAsteroids.second);
-				}
-
-				asterItr = m_asteroids.erase(asterItr);
-				delete asteroid;
-			}
-			else ++asterItr;
-		}
-		if (projectileHit)
-		{
-			projItr = m_projectiles.erase(projItr);
-			delete projectile;
-		}
-		else ++projItr;
-	}
-
-	for (const auto& asteroid : asteroidsToSpawn) SpawnAsteroid(asteroid);
+	return pos.x < 0 || pos.x > m_size.x || pos.y < 0 || pos.y > m_size.y;
 }
 
-void Controller::UpdateElements(std::vector<Asteroid*>& list)
+bool Controller::CheckOutOfBounds(const Math::Vector2i& pos)
 {
-	for (auto itr = list.begin(); itr != list.end(); )
-	{
-		Asteroid* el = *itr;
-		el->Update();
-
-		if (CheckOutOfBounds(el->GetPosF()))
-		{
-			itr = list.erase(itr);
-			delete el;
-		}
-		else itr++;
-	}
+	return pos.x < 0 || pos.x > m_size.x || pos.y < 0 || pos.y > m_size.y;
 }
+
+
+

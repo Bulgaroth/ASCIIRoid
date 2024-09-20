@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	std::cout << "You lose" << std::endl;
+	std::cout << "GAME OVER ! Your Score : " << ctrl.score << std::endl;
 	std::cin.get();
 
 	return 0;

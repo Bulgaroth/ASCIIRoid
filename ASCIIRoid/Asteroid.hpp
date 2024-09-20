@@ -14,7 +14,7 @@ public:
 
 	const int& GetColor() const { return m_color; }
 	const int& GetSize() const { return m_size; }
-	wchar_t GetChar() const;
+	wchar_t GetChar(const Math::Vector2i &charPos) const;
 
 private:
 	int m_size, m_color;

@@ -1,4 +1,4 @@
-#include "Asteroid.hpp"
+﻿#include "Asteroid.hpp"
 #include <vector>
 
 //enum Type { Base, PowerUp, Explosive, Spreader };
@@ -22,18 +22,37 @@ void Asteroid::Update()
 	m_pos += m_velocity;
 }
 
-wchar_t Asteroid::GetChar() const
+wchar_t Asteroid::GetChar(const Math::Vector2i &charPos) const
 {
-	wchar_t res = L' ';
+	if(m_size == 0) return L'.';
+
+	if (charPos.x == -m_size)
+	{
+		if (charPos.y == -m_size) return  L'╭';
+		if (charPos.y == m_size) return  L'╰';
+		return  L'|';
+	}
+
+	if (charPos.x == m_size)
+	{
+		if (charPos.y == -m_size) return  L'╮';
+		if (charPos.y == m_size) return  L'╯';
+		return L'|';
+	}
+
+	if (charPos.y == m_size)
+	{
+		return L'─';
+	}
+	if (charPos.y == -m_size)
+	{
+		return L'─';
+	}
+
 	switch (m_size)
 	{
-		case 0: res = L'.';
-			break;
-		case 1: res = L'�';
-			break;
-		case 2: res = L'o';
-			break;
-		default: res = L'O';
+		case 1: return L'°';
+		case 2: return L'o';
+		default: return L'O';
 	}
-	return res;
 }
