@@ -6,6 +6,7 @@
 #include <iostream>
 #include <windows.h>
 #include <chrono>
+#include <thread>
 
 #include "ASCIIRoid/Math/Utility.hpp"
 #include "ASCIIRoid/Math/Vector3.hpp"
@@ -17,7 +18,7 @@ const Math::Vector3f LIGHT_DIR = Math::Vector3f(1, 1, 1);
 namespace ConsoleRenderer
 {
 	ConsoleWindow::ConsoleWindow(int width, int height)
-		: m_screenWidth(width), m_screenHeight(height), m_worldMap(m_mapSize)
+		: m_worldMap(m_mapSize)
 	{
 		// set as fullscreen
 		INPUT inp[2] = {};
@@ -39,12 +40,9 @@ namespace ConsoleRenderer
 		m_lastTime = std::chrono::system_clock::now();
 	}
 
-	ConsoleWindow::~ConsoleWindow()
-	{
-		delete[] m_screenBuffer;
-	};
+	ConsoleWindow::~ConsoleWindow() = default;
 
-	void ConsoleWindow::Draw(int x, int y, const std::wstring& str) const
+	void ConsoleWindow::Draw(int x, int y, const std::wstring& str)
 	{
 		for (int i = 0; i < str.size(); i++)
 		{
@@ -56,11 +54,16 @@ namespace ConsoleRenderer
 		
 	}
 
-	void ConsoleWindow::Render() const
+	/*
+	 * Writing in a vector is thread-safe only if the threads are writing to different parts of the vector.
+	 * The vector must be resized before the threads start writing to it.
+	 * Threads are not allowed to do any kind of insertions or deletions.
+	 */
+	void ConsoleWindow::ThreadRender(int rx, int ry, int rwidth, int rheight)
 	{
-		for (uint32_t y = 0; y < m_screenHeight; y++)
+		for (int y = ry; y < ry + rheight; y++)
 		{
-			for (uint32_t x = 0; x < m_screenWidth; x++)
+			for (int x = rx; x < rx + rwidth; x++)
 			{
 				Math::Vector2f coord = {
 					static_cast<float>(x) / static_cast<float>(m_screenWidth) * (static_cast<float>(m_screenWidth) / static_cast<float>(m_screenHeight)),
@@ -71,6 +74,25 @@ namespace ConsoleRenderer
 				m_screenBuffer[x + y * m_screenWidth].Attributes = 0x0F;
 			}
 		}
+	}
+
+	void ConsoleWindow::Render()
+	{
+		std::vector<std::thread> threads;
+		int nbThreads = 32;
+		int partHeight = m_screenHeight / nbThreads;
+		threads.reserve(nbThreads);
+		for (int i = 0; i < nbThreads; i++)
+		{
+			threads.emplace_back(&ConsoleWindow::ThreadRender, this, 0, i * partHeight, m_screenWidth, partHeight);
+		}
+
+		// wait for all threads to finish
+		for (auto& thread : threads)
+		{
+			thread.join();
+		}
+
 	}
 
 	wchar_t ConsoleWindow::PerPixel(Math::Vector2f coord) const
@@ -90,8 +112,10 @@ namespace ConsoleRenderer
 			baseDirection.y,
 			-baseDirection.x * sinT + baseDirection.z * cosT
 		);
-		rayDirection = rayDirection.Normalized();
 
+		
+		// same for all spheres
+		rayDirection = rayDirection.Normalized();
 		float a = rayDirection.Dot(rayDirection);
 
 		for (const auto& sphere : m_worldMap.GetSpheres())
@@ -107,8 +131,8 @@ namespace ConsoleRenderer
 			float t0, t1;
 			if (dis >= 0)
 			{
-				t0 = (-b - sqrt(dis)) / (2.0f * a);
-				t1 = (-b + sqrt(dis)) / (2.0f * a);
+				t0 = (-b - dis) / (2.0f * a);
+				t1 = (-b + dis) / (2.0f * a);
 
 				if (t0 > t1)
 					t0 = t1;
@@ -135,12 +159,22 @@ namespace ConsoleRenderer
 		return result;
 	}
 
+	void ConsoleWindow::Reallocate()
+	{
+		size_t size = m_screenWidth * m_screenHeight;
+		if (m_screenBuffer.size() != size)
+		{
+			m_screenBuffer.resize(size);
+			std::fill_n(m_screenBuffer.begin(), size, CHAR_INFO{});
+		}
+	}
+
 	void ConsoleWindow::PushBuffer() const
 	{
 		COORD dwBufferSize = { static_cast<short>(m_screenWidth), static_cast<short>(m_screenHeight)};
 		COORD dwBufferCoord = { 0, 0 };
 		SMALL_RECT rcRegion = { 0, 0, static_cast<short>(m_screenWidth - 1), static_cast<short>(m_screenHeight- 1) };
-		WriteConsoleOutput(m_handle, m_screenBuffer, dwBufferSize, dwBufferCoord, &rcRegion);
+		WriteConsoleOutput(m_handle, m_screenBuffer.data(), dwBufferSize, dwBufferCoord, &rcRegion);
 		// WriteConsoleOutputCharacter(m_handle, m_screenBuffer, m_screenWidth * m_screenHeight, { 0,0 }, &m_dwBytesWritten);
 	}
 

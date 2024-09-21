@@ -4,7 +4,7 @@
 //enum Type { Base, PowerUp, Explosive, Spreader };
 
 Asteroid::Asteroid(int size, Math::Vector2f pos, Math::Vector2f velocity)
-	: m_size(size), m_velocity(velocity), Entity(pos)
+	: Entity(pos), m_size(size), m_velocity(velocity)
 {
 	switch (size)
 	{

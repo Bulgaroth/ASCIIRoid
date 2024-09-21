@@ -15,9 +15,9 @@ namespace ConsoleRenderer
 		ConsoleWindow(int width, int height);
 		~ConsoleWindow();
 
-		void Draw(int x, int y, const std::wstring& str) const;
+		void Draw(int x, int y, const std::wstring& str);
 
-		void Render() const;
+		void Render();
 		void PushBuffer() const;
 
 		void ClearScreen(char fill = ' ') const;
@@ -29,22 +29,19 @@ namespace ConsoleRenderer
 
 		void Update();
 
-	private:
-		wchar_t PerPixel(Math::Vector2f coord) const;
-
-	public:
-		void Reallocate()
-		{
-			delete[] m_screenBuffer;
-			m_screenBuffer = new CHAR_INFO[m_screenHeight * m_screenWidth];
-		}
-		HANDLE m_handle;
-		CHAR_INFO* m_screenBuffer;
-		int m_screenWidth, m_screenHeight;
-		float m_FOV;
-
 		float m_playerAngle = 0;
 		Math::Vector2f m_playerPos = Math::Vector2f(8, 8);
+
+	private:
+		wchar_t PerPixel(Math::Vector2f coord) const;
+		void Reallocate();
+		void ThreadRender(int rx, int ry, int rwidth, int rheight);
+
+	private:
+		HANDLE m_handle;
+		std::vector<CHAR_INFO> m_screenBuffer;
+		int m_screenWidth, m_screenHeight;
+		float m_FOV;
 		Math::Vector2i m_mapSize = Math::Vector2i(16, 16);
 
 		float m_depth = 16.0;
