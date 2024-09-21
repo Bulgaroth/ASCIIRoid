@@ -80,11 +80,11 @@ namespace ConsoleRenderer
 	{
 		std::vector<std::thread> threads;
 		int nbThreads = 32;
-		int partHeight = m_screenHeight / nbThreads;
+		int parWidth = m_screenWidth / nbThreads;
 		threads.reserve(nbThreads);
 		for (int i = 0; i < nbThreads; i++)
 		{
-			threads.emplace_back(&ConsoleWindow::ThreadRender, this, 0, i * partHeight, m_screenWidth, partHeight);
+			threads.emplace_back(&ConsoleWindow::ThreadRender, this, i * parWidth, 0, parWidth, m_screenHeight);
 		}
 
 		// wait for all threads to finish
