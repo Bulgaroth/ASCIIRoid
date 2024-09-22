@@ -8,10 +8,11 @@
 #include <chrono>
 
 #include "Asteroid.hpp"
+#include "ConsoleRenderer/ConsoleRenderer.hpp"
 
 #define MAX_ENTITIES 150
-#define START_NB_ASTEROIDS 10;
-#define ASTEROID_SPAWN_RATE 10;
+#define START_NB_ASTEROIDS 10
+#define ASTEROID_SPAWN_RATE 2
 
 #pragma region Constructeurs
 
@@ -29,6 +30,22 @@ Controller::~Controller()
 	for (int i = 0; i < m_asteroids.size(); ++i) delete m_asteroids[i];
 	for (int i = 0; i < m_projectiles.size(); ++i) delete m_projectiles[i];
 }
+
+std::vector<Math::Sphere> Controller::GetSpheres() const
+{
+	std::vector<Math::Sphere> spheres;
+	for (const auto& asteroid : m_asteroids)
+	{
+		auto pos = asteroid->GetPosF();
+		spheres.push_back(Math::Sphere{ {pos.x, 0, pos.y}, asteroid->GetSize() * 1.0f, asteroid->GetColor() });
+	}
+	for (const auto& projectile : m_projectiles)
+	{
+		auto pos = projectile->GetPosF();
+		spheres.push_back(Math::Sphere{ {pos.x, 0, pos.y}, 0.5f, 0x0F });
+	}
+	return spheres;
+}
 #pragma endregion
 
 #pragma region Runtime
@@ -39,18 +56,17 @@ void Controller::Update()
 	std::chrono::duration<float> duration = now - m_lastTime;
 	m_lastTime = now;
 	dt = duration.count();
-	if (++m_nbFrames >= 1000)
+	if (m_timeElapsed > ASTEROID_SPAWN_RATE)
 	{
-		m_nbFrames = 0;
+		m_timeElapsed = 0;
 		SpawnAsteroid();
 	}
+	m_timeElapsed += dt;
 
 	HandleInputs();
 	CheckShoot();
 	UpdateElements(m_asteroids);
 	UpdateElements(m_projectiles);
-	ClearMap();
-	DrawMap();
 	HandleCollisions();
 }
 
@@ -66,7 +82,7 @@ void Controller::UpdateElements(std::vector<Asteroid*>& list)
 			itr = list.erase(itr);
 			delete el;
 		}
-		else itr++;
+		else ++itr;
 	}
 }
 
@@ -81,7 +97,7 @@ void Controller::HandleCollisions()
 
 		if (dst < asteroid->GetSize())
 		{
-    		DrawEndScreen();
+    		// DrawEndScreen();
 			end = true;
 			return;
 		}
@@ -131,11 +147,12 @@ void Controller::HandleCollisions()
 
 #pragma region Affichage
 
-void Controller::DrawMap()
+void Controller::DrawMap(ConsoleRenderer::ConsoleWindow& window)
 {
+	ClearMap();
 	COORD dwBufferSize = { SCREEN_WIDTH, SCREEN_HEIGHT };
 	COORD dwBufferCoord = { 0, 0 };
-	SMALL_RECT rcRegion = { 0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1 };
+	SMALL_RECT rcRegion = { 50, 50, SCREEN_WIDTH, SCREEN_HEIGHT };
 
 	for (const auto& asteroid : m_asteroids) DrawAsteroid(*asteroid);
 
@@ -143,7 +160,7 @@ void Controller::DrawMap()
 	{
 		const Math::Vector2i& pos = projectile->GetPos();
 
-		CHAR_INFO& cell = m_buffer[pos.y][pos.x];
+		CHAR_INFO& cell = m_buffer[pos.x + pos.y * SCREEN_WIDTH];
 		cell.Char.UnicodeChar = projectile->GetChar(pos);
 		cell.Attributes = projectile->GetColor();
 	}
@@ -151,16 +168,24 @@ void Controller::DrawMap()
 	const Math::Vector2i& playerPos = m_player.GetPos<int>();
 	const Math::Vector2i& shootPos = m_player.GetCanonPos<int>();
 
-	CHAR_INFO& playerCell = m_buffer[playerPos.y][playerPos.x];
+	CHAR_INFO& playerCell = m_buffer[playerPos.x + playerPos.y * SCREEN_WIDTH];
 	playerCell.Char.UnicodeChar = L'A';
 	playerCell.Attributes = 0x0F;
 
-	CHAR_INFO& shootCell = m_buffer[shootPos.y][shootPos.x];
+	CHAR_INFO& shootCell = m_buffer[shootPos.x + shootPos.y * SCREEN_WIDTH];
 	shootCell.Char.UnicodeChar = L'i';
 	shootCell.Attributes = 0x0E;
 
-	WriteConsoleOutput(m_hOutput, (CHAR_INFO*)m_buffer, dwBufferSize,
-		dwBufferCoord, &rcRegion);
+	// fill the edges with "#"
+	for (int i = 0; i < SCREEN_WIDTH; i++)
+	{
+		m_buffer[i].Char.UnicodeChar = L'#';
+		m_buffer[i].Attributes = 0x0F;
+		m_buffer[i + (SCREEN_HEIGHT - 1) * SCREEN_WIDTH].Char.UnicodeChar = L'#';
+		m_buffer[i + (SCREEN_HEIGHT - 1) * SCREEN_WIDTH].Attributes = 0x0F;
+	}
+
+	window.Draw(rcRegion, m_buffer);
 }
 
 void Controller::DrawAsteroid(const Asteroid& asteroid)
@@ -177,7 +202,7 @@ void Controller::DrawAsteroid(const Asteroid& asteroid)
 			const Math::Vector2i& charPos{ x, y };
 
 			if (CheckOutOfBounds(pos)) continue;
-			CHAR_INFO &cell = m_buffer[pos.y][pos.x];
+			CHAR_INFO &cell = m_buffer[pos.x + pos.y * SCREEN_WIDTH];
 			cell.Char.UnicodeChar = asteroid.GetChar(charPos);
 			cell.Attributes = asteroid.GetColor();
 		}
@@ -186,10 +211,7 @@ void Controller::DrawAsteroid(const Asteroid& asteroid)
 
 void Controller::ClearMap()
 {
-	for (int y = 0; y < SCREEN_HEIGHT; ++y)
-	{
-		std::fill_n(m_buffer[y], SCREEN_WIDTH, CHAR_INFO{});
-	}
+	std::fill_n(m_buffer, SCREEN_WIDTH * SCREEN_HEIGHT, CHAR_INFO{});
 }
 
 void Controller::DrawEndScreen()

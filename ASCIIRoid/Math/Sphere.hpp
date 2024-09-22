@@ -12,6 +12,7 @@ namespace Math
 	public:
 		Vector3f center;
 		float radius;
+		int color;
 
 		bool Intersect(const Ray& ray, Vector3f& position, float& distance) const
 		{

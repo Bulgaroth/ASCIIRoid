@@ -14,6 +14,10 @@ namespace Math {
 	public:
 		inline static bool SolveQuadratic(const float &a, const float &b, const float &c, float &x0, float &x1);
 		static std::array<Math::Vector2f, 8> Neighbours;
+		static bool IsAlmostEqual(float a, float b, float epsilon = 0.0001f)
+		{
+			return std::abs(a - b) < epsilon;
+		}
 	};
 
 	

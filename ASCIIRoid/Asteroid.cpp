@@ -8,6 +8,8 @@ Asteroid::Asteroid(int size, Math::Vector2f pos, Math::Vector2f velocity)
 {
 	switch (size)
 	{
+		case 0:m_color = 0x0E;
+			break;
 		case 1: m_color = 0x0A;
 			break;
 		case 2: m_color = 0x0B;
@@ -24,7 +26,7 @@ void Asteroid::Update(float dt)
 
 wchar_t Asteroid::GetChar(const Math::Vector2i &charPos) const
 {
-	if(m_size == 0) return L'.';
+	if(m_size == 0) return L'*';
 
 	if (charPos.x == -m_size)
 	{

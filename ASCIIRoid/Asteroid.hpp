@@ -8,7 +8,7 @@ class Asteroid : public Entity
 {
 public:
 	Asteroid(int size, Math::Vector2f pos, Math::Vector2f velocity = Math::Vector2f::zero);
-	~Asteroid() = default;
+	virtual ~Asteroid() = default;
 
 	virtual void Update(float dt) override;
 

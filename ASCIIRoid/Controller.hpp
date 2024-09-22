@@ -7,6 +7,8 @@
 #include <windows.h>
 
 #include "Player.hpp"
+#include "ConsoleRenderer/ConsoleRenderer.hpp"
+#include "Math/Sphere.hpp"
 
 #define SCREEN_HEIGHT 46
 #define SCREEN_WIDTH 146
@@ -20,6 +22,11 @@ public:
 	Controller(Math::Vector2i size);
 	~Controller();
 
+	std::vector<Math::Sphere> GetSpheres() const;
+	Player& GetPlayer() { return m_player; }
+
+	void DrawMap(ConsoleRenderer::ConsoleWindow& window);
+
 	void Update();
 
 private:
@@ -28,14 +35,12 @@ private:
 	Math::Vector2i m_size;
 	std::vector<Asteroid*> m_asteroids;
 	std::vector<Asteroid*> m_projectiles;
-	int m_nbFrames;
+	float m_timeElapsed;
 
 	Player m_player { Math::Vector2i{SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2} };
 
 	HANDLE m_hOutput;
-	CHAR_INFO m_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
-
-	void DrawMap();
+	CHAR_INFO m_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 	void DrawAsteroid(const Asteroid& asteroid);
 	void ClearMap();
 	void DrawEndScreen();

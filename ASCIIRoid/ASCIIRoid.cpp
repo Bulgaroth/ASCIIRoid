@@ -12,23 +12,25 @@ int main(int argc, char* argv[])
 	std::cout << "Resize the console window..\n";
 	std::cin.get();
 	Math::Vector2i size(156, 46);
-	Controller ctrl(size);
 	ConsoleRenderer::ConsoleWindow window(size.x, size.y);
+	Controller ctrl(size);
 	while (!ctrl.end)
 	{
-		window.Update();
 	
-		std::wstringstream ss;
-		ss << "Player angle is " << window.m_playerAngle * 180 / 3.14159265358979323846 << " | ";
-		ss << "Player position is " << window.m_playerPos.x << ", 0, " << window.m_playerPos.y;
-		window.Draw(0, 0, ss.str());
+		// std::wstringstream ss;
+		// ss << "Player angle is " << window.GetPlayer().GetCamera().GetYaw() * 180 / 3.14159265358979323846 << " | ";
+		// ss << "Player position is " << window.GetPlayer().GetCamera().GetPosition().x << ", 0, " << window.GetPlayer().GetCamera().GetPosition().y;
+		// window.Draw(0, 0, ss.str());
+		ctrl.Update();
+		window.Update(ctrl.GetSpheres(), ctrl.GetPlayer());
+		ctrl.DrawMap(window);
 	
 		window.PushBuffer();
-		// ctrl.Update();
 
 		// std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	// std::cout << "GAME OVER ! Your Score : " << ctrl.score << std::endl;
+	window.ClearScreen();
+	std::cout << "GAME OVER ! Your Score : " << ctrl.score << std::endl;
 	std::cin.get();
 }

@@ -8,6 +8,7 @@ namespace Math
 	class Vector3
 	{
 	public:
+		Vector3() : x(0), y(0), z(0) {}
 		Vector3(T x, T y, T z) : x(x), y(y), z(z) {}
 		~Vector3() = default;
 
@@ -29,6 +30,14 @@ namespace Math
 			return Vector3(x + other.x, y + other.y, z + other.z);
 		}
 
+		Vector3& operator+=(Vector3 other)
+		{
+			x += other.x;
+			y += other.y;
+			z += other.z;
+			return *this;
+		}
+
 		Vector3 operator-(Vector3 other) const
 		{
 			return Vector3(x - other.x, y - other.y, z - other.z);
@@ -38,6 +47,12 @@ namespace Math
 		Vector3 operator*(TT other) const
 		{
 			return Vector3(x * other, y * other, z * other);
+		}
+
+		template<typename TT>
+		Vector3 operator/(TT other) const
+		{
+			return Vector3(x / other, y / other, z / other);
 		}
 
 		Vector3 Normalized() const
@@ -52,6 +67,14 @@ namespace Math
 				return Vector3(nx, ny, nz);
 			}
 			return Vector3(0.f, 0.f, 0.f);
+		}
+
+		Vector3 Cross(Vector3 other) const
+		{
+			T nx = y * other.z - z * other.y;
+			T ny = z * other.x - x * other.z;
+			T nz = x * other.y - y * other.x;
+			return Vector3(nx, ny, nz);
 		}
 	};
 

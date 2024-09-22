@@ -10,6 +10,7 @@
 
 #include "ASCIIRoid/Math/Utility.hpp"
 #include "ASCIIRoid/Math/Vector3.hpp"
+#include "ASCIIRoid/Math/Sphere.hpp"
 
 const std::wstring CHARS = L"@&%QWNM0gB$#DR8mHXKAUbGOpV4d9h6PkqwSE2]ayjxY5Zoen[ult13If}C{iF|(7J)vTLs?z/*cr!+<>;=^,_:'-.`";
 const Math::Vector3f LIGHT_DIR = Math::Vector3f(1, 1, 1);
@@ -18,7 +19,6 @@ const Math::Vector3f LIGHT_DIR = Math::Vector3f(1, 1, 1);
 namespace ConsoleRenderer
 {
 	ConsoleWindow::ConsoleWindow(int width, int height)
-		: m_worldMap(m_mapSize)
 	{
 		// set as fullscreen
 		INPUT inp[2] = {};
@@ -32,8 +32,7 @@ namespace ConsoleRenderer
 		// m_handle = GetStdHandle(STD_OUTPUT_HANDLE);
 		Reallocate();
 		
-		m_handle = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
-		SetConsoleActiveScreenBuffer(m_handle);
+		m_handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
 		m_FOV = 3.14159265f / 4.0f; // in radiant
 
@@ -42,13 +41,14 @@ namespace ConsoleRenderer
 
 	ConsoleWindow::~ConsoleWindow() = default;
 
-	void ConsoleWindow::Draw(int x, int y, const std::wstring& str)
+	void ConsoleWindow::Draw(SMALL_RECT region, const CHAR_INFO* buffer)
 	{
-		for (int i = 0; i < str.size(); i++)
+		for (int y = region.Top; y < region.Top + region.Bottom; y++)
 		{
-			if (x >= 0 && x < m_screenWidth && y >= 0 && y < m_screenHeight)
+			for (int x = region.Left; x < region.Left + region.Right; x++)
 			{
-				m_screenBuffer[y * m_screenWidth + x + i].Char.UnicodeChar = str[i];
+				auto idx = (x - region.Left) + (y - region.Top) * region.Right;
+				m_screenBuffer[x + y * m_screenWidth] = buffer[idx];
 			}
 		}
 		
@@ -59,24 +59,20 @@ namespace ConsoleRenderer
 	 * The vector must be resized before the threads start writing to it.
 	 * Threads are not allowed to do any kind of insertions or deletions.
 	 */
-	void ConsoleWindow::ThreadRender(int rx, int ry, int rwidth, int rheight)
+	void ConsoleWindow::ThreadRender(int rx, int ry, int rwidth, int rheight, const std::vector<Math::Sphere>& spheres)
 	{
 		for (int y = ry; y < ry + rheight; y++)
 		{
 			for (int x = rx; x < rx + rwidth; x++)
 			{
-				Math::Vector2f coord = {
-					static_cast<float>(x) / static_cast<float>(m_screenWidth) * (static_cast<float>(m_screenWidth) / static_cast<float>(m_screenHeight)),
-					static_cast<float>(y) / static_cast<float>(m_screenHeight)
-				};
-				coord = coord * 2.0f - 1.0f;
-				m_screenBuffer[x + y * m_screenWidth].Char.UnicodeChar = PerPixel(coord);
-				m_screenBuffer[x + y * m_screenWidth].Attributes = 0x0F;
+				auto perPixel = PerPixel({x, y}, spheres);
+				m_screenBuffer[x + y * m_screenWidth].Char.UnicodeChar = perPixel.first;
+				m_screenBuffer[x + y * m_screenWidth].Attributes = static_cast<unsigned short>(perPixel.second);
 			}
 		}
 	}
 
-	void ConsoleWindow::Render()
+	void ConsoleWindow::Render(const std::vector<Math::Sphere>& spheres)
 	{
 		std::vector<std::thread> threads;
 		int nbThreads = 32;
@@ -84,7 +80,7 @@ namespace ConsoleRenderer
 		threads.reserve(nbThreads);
 		for (int i = 0; i < nbThreads; i++)
 		{
-			threads.emplace_back(&ConsoleWindow::ThreadRender, this, i * parWidth, 0, parWidth, m_screenHeight);
+			threads.emplace_back(&ConsoleWindow::ThreadRender, this, i * parWidth, 0, parWidth, m_screenHeight, spheres);
 		}
 
 		// wait for all threads to finish
@@ -95,30 +91,20 @@ namespace ConsoleRenderer
 
 	}
 
-	wchar_t ConsoleWindow::PerPixel(Math::Vector2f coord) const
+	std::pair<wchar_t, int> ConsoleWindow::PerPixel(Math::Vector2i coord, const std::vector<Math::Sphere>& spheres)
 	{
 		wchar_t result = L' ';
 		Math::Vector3f closestPoint = {0.0f, 0.0f, 0.0f};
+		int color = 0x0F;
 		bool hit = false;
 		float closestDistance = 1000000.0f;
-		Math::Vector3f rayOrigin = Math::Vector3f(m_playerPos.x, 0, m_playerPos.y);
-
-		float cosT = cosf(m_playerAngle);
-		float sinT = sinf(m_playerAngle);
-
-		Math::Vector3f baseDirection(coord.x, coord.y, -1.0f);
-		Math::Vector3f rayDirection = Math::Vector3f(
-			baseDirection.x * cosT + baseDirection.z * sinT,
-			baseDirection.y,
-			-baseDirection.x * sinT + baseDirection.z * cosT
-		);
-
+		Math::Vector3f rayOrigin = m_player->GetCamera().GetPosition();
+		Math::Vector3f rayDirection = m_player->GetCamera().GetRayDirection(coord);
 		
 		// same for all spheres
-		rayDirection = rayDirection.Normalized();
 		float a = rayDirection.Dot(rayDirection);
 
-		for (const auto& sphere : m_worldMap.GetSpheres())
+		for (auto& sphere : spheres)
 		{
 			float radius = sphere.radius;
 			auto spherePos = sphere.center;
@@ -142,6 +128,7 @@ namespace ConsoleRenderer
 					closestDistance = t0;
 					hit = true;
 					closestPoint = spherePos;
+					color = sphere.color;
 				}
 			}
 		}
@@ -156,7 +143,7 @@ namespace ConsoleRenderer
 			auto idx = static_cast<int>(lightIntensity * (CHARS.size() - 1));
 			result = CHARS[idx];
 		}
-		return result;
+		return {result, color};
 	}
 
 	void ConsoleWindow::Reallocate()
@@ -200,8 +187,9 @@ namespace ConsoleRenderer
 		return { columns, rows };
 	}
 
-	void ConsoleWindow::Update()
+	void ConsoleWindow::Update(const std::vector<Math::Sphere>& spheres, Player& player)
 	{
+		m_player = &player;
 		auto now = std::chrono::system_clock::now();
 		std::chrono::duration<float> duration = now - m_lastTime;
 		m_lastTime = now;
@@ -212,29 +200,11 @@ namespace ConsoleRenderer
 		{
 			m_screenWidth = size.x;
 			m_screenHeight = size.y;
+			player.GetCamera().OnResize(size);
 			Reallocate();
 			ClearScreen();
 		}
-
-
-		if (GetAsyncKeyState((unsigned short)'Q') & 0x8000)
-			m_playerAngle += 2.f * deltaTime;
-
-		if (GetAsyncKeyState((unsigned short)'D') & 0x8000)
-			m_playerAngle -= 2.f * deltaTime;
-
-		if (GetAsyncKeyState((unsigned short)'Z') & 0x8000)
-		{
-			m_playerPos.x -= sinf(m_playerAngle) * 4.f * deltaTime;
-			m_playerPos.y -= cosf(m_playerAngle) * 4.f * deltaTime;
-		}
-
-		if (GetAsyncKeyState((unsigned short)'S') & 0x8000)
-		{
-			m_playerPos.x += sinf(m_playerAngle) * 4.f * deltaTime;
-			m_playerPos.y += cosf(m_playerAngle) * 4.f * deltaTime;
-		}
-		Render();
+		Render(spheres);
 		//
 		// const auto& spheres = m_worldMap.GetSpheres();
 		//

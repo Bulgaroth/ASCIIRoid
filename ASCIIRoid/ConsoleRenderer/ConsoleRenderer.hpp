@@ -4,8 +4,13 @@
 #include <ostream>
 #include <windows.h>
 
-#include "ASCIIRoid/WorldMap.hpp"
+#include "ASCIIRoid/Player.hpp"
 #include "ASCIIRoid/Math/Vector2.hpp"
+
+namespace Math
+{
+	class Sphere;
+}
 
 namespace ConsoleRenderer
 {
@@ -15,9 +20,7 @@ namespace ConsoleRenderer
 		ConsoleWindow(int width, int height);
 		~ConsoleWindow();
 
-		void Draw(int x, int y, const std::wstring& str);
-
-		void Render();
+		void Draw(SMALL_RECT region, const CHAR_INFO* buffer);
 		void PushBuffer() const;
 
 		void ClearScreen(char fill = ' ') const;
@@ -27,28 +30,25 @@ namespace ConsoleRenderer
 
 		Math::Vector2i GetSize() const;
 
-		void Update();
-
-		float m_playerAngle = 0;
-		Math::Vector2f m_playerPos = Math::Vector2f(8, 8);
+		void Update(const std::vector<Math::Sphere>& spheres, Player& player);
 
 	private:
-		wchar_t PerPixel(Math::Vector2f coord) const;
+		std::pair<wchar_t, int> PerPixel(Math::Vector2i coord, const std::vector<Math::Sphere>& spheres);
 		void Reallocate();
-		void ThreadRender(int rx, int ry, int rwidth, int rheight);
+		void Render(const std::vector<Math::Sphere>& spheres);
+		void ThreadRender(int rx, int ry, int rwidth, int rheight, const std::vector<Math::Sphere>& spheres);
 
 	private:
 		HANDLE m_handle;
 		std::vector<CHAR_INFO> m_screenBuffer;
 		int m_screenWidth, m_screenHeight;
 		float m_FOV;
-		Math::Vector2i m_mapSize = Math::Vector2i(16, 16);
 
 		float m_depth = 16.0;
 
-		WorldMap m_worldMap;
-
 		std::chrono::system_clock::time_point m_lastTime;
+
+		Player* m_player;
 
 		DWORD m_dwBytesWritten;
 	};
