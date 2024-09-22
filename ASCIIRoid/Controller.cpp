@@ -152,7 +152,7 @@ void Controller::DrawMap(ConsoleRenderer::ConsoleWindow& window)
 	ClearMap();
 	COORD dwBufferSize = { SCREEN_WIDTH, SCREEN_HEIGHT };
 	COORD dwBufferCoord = { 0, 0 };
-	SMALL_RECT rcRegion = { 50, 50, SCREEN_WIDTH, SCREEN_HEIGHT };
+	SMALL_RECT rcRegion = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
 	for (const auto& asteroid : m_asteroids) DrawAsteroid(*asteroid);
 
